@@ -542,6 +542,7 @@ export default function App() {
           )}
           {/* Add game specific UI here */}
         </View>
+    </View>
   );
 }
 
