@@ -4,14 +4,14 @@
       "src": "cross-platform-app/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "web-build"
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "cross-platform-app/web-build/$1"
+      "dest": "cross-platform-app/dist/$1"
     }
   ]
 }
