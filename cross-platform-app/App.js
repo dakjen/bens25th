@@ -281,7 +281,8 @@ export default function App() {
       <StatusBar style="auto" />
 
       {currentScreen === 'home' && (
-        <View>
+        <View style={{ alignItems: 'center' }}>
+          <Image source={require('./assets/benfunnyhs.jpg')} style={styles.homeScreenImage} />
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('admin')}>
               <Text style={styles.buttonText}>Create Game (Admin)</Text>
@@ -296,7 +297,8 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'initial' && (
-        <View style={{ paddingVertical: 20 }}>
+        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+          <Image source={require('./assets/france.jpeg')} style={styles.homeScreenImage} />
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
               <Text style={styles.buttonText}>Back to Home</Text>
@@ -324,7 +326,7 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'add' && (
-        <View style={{ paddingVertical: 20 }}>
+        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setAdminScreenStep('initial')}>
               <Text style={styles.buttonText}>Back to Game Details</Text>
@@ -389,7 +391,7 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'manage' && (
-        <View style={{ paddingVertical: 20 }}>
+        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('add')}>
               <Text style={styles.buttonText}>Back (Add More Questions)</Text>
@@ -463,6 +465,7 @@ export default function App() {
 
       {currentScreen === 'player' && (
         <View>
+          <Image source={require('./assets/oldben.jpg')} style={styles.homeScreenImage} />
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
               <Text style={styles.buttonText}>Back to Home</Text>
@@ -564,6 +567,7 @@ const styles = StyleSheet.create({
   },
   buttonSpacing: {
     marginBottom: 15, // Add vertical spacing between buttons
+    alignItems: 'center',
   },
   mainImage: {
     width: 200, // Example width
@@ -641,5 +645,11 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginTop: 10,
     marginBottom: 10,
+  },
+  homeScreenImage: {
+    width: 250,
+    height: 250,
+    resizeMode: 'contain',
+    marginBottom: 20,
   },
 });
