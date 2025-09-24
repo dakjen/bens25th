@@ -31,6 +31,7 @@ export default function App() {
   const [bulkQuestionText, setBulkQuestionText] = useState('');
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
   const [editingQuestionText, setEditingQuestionText] = useState('');
+  const [showCongratulationsPage, setShowCongratulationsPage] = useState(false);
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -188,6 +189,8 @@ export default function App() {
   };
 
   const handleFinishGameSetup = () => {
+    setShowCongratulationsPage(true);
+    return;
     if (socket) {
       if (questions.length === 0) {
         Alert.alert('Error', 'Please add at least one question.');
@@ -245,6 +248,8 @@ export default function App() {
   };
 
   const handleJoinGame = () => {
+    setShowCongratulationsPage(true);
+    return;
     if (socket && gameKey && playerName && rejoinCode) {
       socket.emit('joinGame', { gameKey, playerName, rejoinCode }, ({ success, message }) => {
         if (success) {
@@ -259,6 +264,8 @@ export default function App() {
   };
 
   const handleRejoinGame = () => {
+    setShowCongratulationsPage(true);
+    return;
     if (socket && gameKey && rejoinCode) {
       socket.emit('rejoinGame', { gameKey, rejoinCode }, ({ success, message, playerName: rejoinedPlayerName }) => {
         if (success) {
@@ -275,6 +282,17 @@ export default function App() {
 
   return (
     <View style={styles.container} onLayout={onLayoutRootView}>
+      {showCongratulationsPage && (
+        <View style={styles.congratulationsContainer}>
+          <Text style={styles.congratulationsText}>Congratulations!</Text>
+          <TouchableOpacity style={styles.button} onPress={() => setShowCongratulationsPage(false)}>
+            <Text style={styles.buttonText}>Go Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!showCongratulationsPage && (
+        <View style={styles.container} onLayout={onLayoutRootView}>
       <Text style={styles.title}>Benjamin's 25th Birthday</Text>
       <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
 
@@ -537,6 +555,7 @@ export default function App() {
           {/* Add game specific UI here */}
         </View>
       )}
+      )}
     </View>
   );
 }
@@ -651,5 +670,18 @@ const styles = StyleSheet.create({
     height: 250,
     resizeMode: 'contain',
     marginBottom: 20,
+  },
+  congratulationsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  congratulationsText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#ececec',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
