@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-const SOCKET_SERVER_URL = 'http://localhost:3001'; // Replace with your backend server URL
+const SOCKET_SERVER_URL = 'https://bens25th.onrender.com'; // Replace with your backend server URL
 
 export default function App() {
   const [socket, setSocket] = useState(null);
