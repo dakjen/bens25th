@@ -34,17 +34,42 @@ io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
   // Admin creates a new game
-  socket.on('createGame', (callback) => {
+  socket.on('createGame', ({ timelineDays, location, questions }, callback) => {
     const gameKey = generateGameKey();
     games[gameKey] = {
       adminSocketId: socket.id,
       players: {},
       state: 'waiting', // waiting, playing, finished
+      timelineDays,
+      location,
+      questions,
+      currentQuestionIndex: 0, // Start with the first question
       // Add other game-specific state here
     };
     socket.join(gameKey); // Admin joins the game room
-    console.log(`Game created: ${gameKey} by admin ${socket.id}`);
+    console.log(`Game created: ${gameKey} by admin ${socket.id} with ${questions.length} questions.`);
     if (callback) callback({ success: true, gameKey });
+  });
+
+  // Admin saves the game (placeholder for persistence)
+  socket.on('saveGame', ({ gameKey }, callback) => {
+    // In a real application, you would save the game state to a database here.
+    // For now, it's just an in-memory object.
+    console.log(`Game ${gameKey} saved by admin ${socket.id}. (In-memory only)`);
+    if (callback) callback({ success: true });
+  });
+
+  // Admin deletes the game
+  socket.on('deleteGame', ({ gameKey }, callback) => {
+    const game = games[gameKey];
+    if (game && game.adminSocketId === socket.id) {
+      io.to(gameKey).emit('gameEnded', { gameKey, message: 'Admin deleted the game.' });
+      delete games[gameKey];
+      console.log(`Game ${gameKey} deleted by admin ${socket.id}.`);
+      if (callback) callback({ success: true });
+    } else {
+      if (callback) callback({ success: false, message: 'Game not found or not authorized.' });
+    }
   });
 
   // Player joins a game for the first time

@@ -11,10 +11,15 @@ export default function App() {
   const [playerName, setPlayerName] = useState('');
   const [rejoinCode, setRejoinCode] = useState('');
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'admin', 'player', 'game'
+  const [adminScreenStep, setAdminScreenStep] = useState('initial'); // 'initial', 'questions'
+  const [adminQuestionStep, setAdminQuestionStep] = useState('add'); // 'add', 'manage'
   const [playersInGame, setPlayersInGame] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [timelineDays, setTimelineDays] = useState('');
   const [location, setLocation] = useState('');
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionText, setCurrentQuestionText] = useState('');
+  const [bulkQuestionText, setBulkQuestionText] = useState('');
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -49,6 +54,10 @@ export default function App() {
       setIsAdmin(false);
       setTimelineDays(''); // Clear timeline days on game end
       setLocation(''); // Clear location on game end
+      setQuestions([]); // Clear questions on game end
+      setCurrentQuestionText('');
+      setBulkQuestionText(''); // Clear bulk question text on game end
+      setAdminScreenStep('initial'); // Reset admin screen step
     });
 
     newSocket.on('disconnect', () => {
@@ -58,13 +67,58 @@ export default function App() {
     return () => newSocket.disconnect();
   }, []);
 
-  const handleCreateGame = () => {
+  const handleProceedToQuestions = () => {
+    if (!timelineDays || !location) {
+      Alert.alert('Error', 'Please enter timeline days and location.');
+      return;
+    }
+    setAdminScreenStep('questions');
+  };
+
+  const handleAddQuestion = () => {
+    if (currentQuestionText) {
+      setQuestions(prev => [...prev, currentQuestionText]);
+      setCurrentQuestionText('');
+    } else {
+      Alert.alert('Error', 'Please enter a question.');
+    }
+  };
+
+  const handleParseAndAddQuestions = () => {
+    if (bulkQuestionText) {
+      const parsedQuestions = bulkQuestionText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+      if (parsedQuestions.length > 0) {
+        setQuestions(prev => [...prev, ...parsedQuestions]);
+        setBulkQuestionText('');
+      } else {
+        Alert.alert('Error', 'No valid questions found in the pasted text.');
+      }
+    } else {
+      Alert.alert('Error', 'Please paste questions into the bulk entry field.');
+    }
+  };
+
+  const handleDeleteQuestion = (indexToDelete) => {
+    Alert.alert(
+      'Delete Question',
+      'Are you sure you want to delete this question?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', onPress: () => {
+            setQuestions(prev => prev.filter((_, index) => index !== indexToDelete));
+          }, style: 'destructive' },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleFinishGameSetup = () => {
     if (socket) {
-      if (!timelineDays || !location) {
-        Alert.alert('Error', 'Please enter timeline days and location.');
+      if (questions.length === 0) {
+        Alert.alert('Error', 'Please add at least one question.');
         return;
       }
-      socket.emit('createGame', { timelineDays: parseInt(timelineDays), location }, ({ success, gameKey: newGameKey }) => {
+      socket.emit('createGame', { timelineDays: parseInt(timelineDays), location, questions }, ({ success, gameKey: newGameKey }) => {
         if (success) {
           setGameKey(newGameKey);
           setIsAdmin(true);
@@ -75,6 +129,43 @@ export default function App() {
           Alert.alert('Error', 'Failed to create game');
         }
       });
+    }
+  };
+
+  const handleSaveGame = () => {
+    if (socket && gameKey) {
+      socket.emit('saveGame', { gameKey }, ({ success }) => {
+        if (success) {
+          Alert.alert('Game Saved', 'Game state saved successfully!');
+        } else {
+          Alert.alert('Error', 'Failed to save game.');
+        }
+      });
+    }
+  };
+
+  const handleDeleteGame = () => {
+    if (socket && gameKey) {
+      Alert.alert(
+        'Delete Game',
+        'Are you sure you want to delete this game? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', onPress: () => {
+              socket.emit('deleteGame', { gameKey }, ({ success, message }) => {
+                if (success) {
+                  Alert.alert('Game Deleted', 'Game deleted successfully.');
+                  setCurrentScreen('home'); // Go back to home screen
+                  setGameKey('');
+                  setIsAdmin(false);
+                } else {
+                  Alert.alert('Error', message || 'Failed to delete game.');
+                }
+              });
+            }, style: 'destructive' },
+        ],
+        { cancelable: true }
+      );
     }
   };
 
@@ -129,7 +220,7 @@ export default function App() {
         </View>
       )}
 
-      {currentScreen === 'admin' && (
+      {currentScreen === 'admin' && adminScreenStep === 'initial' && (
         <View>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
@@ -150,11 +241,92 @@ export default function App() {
             onChangeText={setLocation}
           />
           <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleCreateGame}>
-              <Text style={styles.buttonText}>Create New Game</Text>
+            <TouchableOpacity style={styles.button} onPress={handleProceedToQuestions}>
+              <Text style={styles.buttonText}>Proceed to Questions</Text>
             </TouchableOpacity>
           </View>
-          {gameKey ? <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text> : null}
+        </View>
+      )}
+
+      {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'add' && (
+        <View>
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={() => setAdminScreenStep('initial')}>
+              <Text style={styles.buttonText}>Back to Game Details</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.gameKeyText}>Add Questions</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Question Text"
+            value={currentQuestionText}
+            onChangeText={setCurrentQuestionText}
+          />
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
+              <Text style={styles.buttonText}>Add Question</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            placeholder="Paste multiple questions here (one per line)"
+            value={bulkQuestionText}
+            onChangeText={setBulkQuestionText}
+            multiline
+            numberOfLines={4}
+          />
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={handleParseAndAddQuestions}>
+              <Text style={styles.buttonText}>Parse and Add Questions</Text>
+            </TouchableOpacity>
+          </View>
+
+          {questions.length > 0 && (
+            <View>
+              <Text style={styles.gameKeyText}>Current Questions:</Text>
+              {questions.map((q, index) => (
+                <View key={index} style={styles.questionItem}>
+                  <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('manage')}>
+              <Text style={styles.buttonText}>Next (Manage Questions)</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'manage' && (
+        <View>
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('add')}>
+              <Text style={styles.buttonText}>Back (Add More Questions)</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.gameKeyText}>Manage Questions</Text>
+          {questions.length === 0 ? (
+            <Text style={styles.gameKeyText}>No questions added yet.</Text>
+          ) : (
+            questions.map((q, index) => (
+              <View key={index} style={styles.questionItem}>
+                <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
+                <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
+                  <Text style={styles.deleteButtonText}>X</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+
+          <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={handleFinishGameSetup}>
+              <Text style={styles.buttonText}>Finish Game Setup</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -203,7 +375,19 @@ export default function App() {
         <View>
           <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
           {isAdmin ? (
-            <Text style={styles.gameKeyText}>You are the Admin</Text>
+            <View>
+              <Text style={styles.gameKeyText}>You are the Admin</Text>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                  <Text style={styles.buttonText}>Save Game</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                  <Text style={styles.buttonText}>Delete Game</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : (
             <Text style={styles.gameKeyText}>Playing as: {playerName}</Text>
           )}
@@ -270,6 +454,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#333',
   },
+  multilineInput: {
+    height: 100, // Taller for bulk input
+    textAlignVertical: 'top', // Align text to top for multiline
+    paddingVertical: 10,
+  },
   button: {
     backgroundColor: '#6f9a7d',
     paddingVertical: 10,
@@ -284,5 +473,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  questionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '80%',
+    marginBottom: 5,
+  },
+  deleteButtonText: {
+    color: 'red',
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginLeft: 10,
   },
 });
