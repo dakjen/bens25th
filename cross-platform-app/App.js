@@ -13,22 +13,6 @@ SplashScreen.preventAutoHideAsync();
 const SOCKET_SERVER_URL = 'http://localhost:8082'; // Replace with your backend server URL
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_700Bold,
-    PermanentMarker_400Regular,
-  });
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
   const [socket, setSocket] = useState(null);
   const [gameKey, setGameKey] = useState('');
   const [playerName, setPlayerName] = useState('');
@@ -97,6 +81,23 @@ export default function App() {
 
     return () => newSocket.disconnect();
   }, []);
+
+  const [fontsLoaded] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_700Bold,
+    PermanentMarker_400Regular,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const handleProceedToQuestions = () => {
     if (!timelineDays || !location) {
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 5, // Reduced margin to bring subtitle closer
     color: '#ececec',
