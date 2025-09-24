@@ -19,7 +19,7 @@ const games = {}; // Stores game sessions: { gameKey: { adminSocketId, players: 
 function generateGameKey() {
   let key;
   do {
-    key = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4-character alphanumeric key
+    key = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6-character alphanumeric key
   } while (games[key]);
   return key;
 }

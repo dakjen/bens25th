@@ -20,6 +20,8 @@ export default function App() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionText, setCurrentQuestionText] = useState('');
   const [bulkQuestionText, setBulkQuestionText] = useState('');
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
+  const [editingQuestionText, setEditingQuestionText] = useState('');
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -58,6 +60,8 @@ export default function App() {
       setCurrentQuestionText('');
       setBulkQuestionText(''); // Clear bulk question text on game end
       setAdminScreenStep('initial'); // Reset admin screen step
+      setEditingQuestionIndex(null);
+      setEditingQuestionText('');
     });
 
     newSocket.on('disconnect', () => {
@@ -110,6 +114,26 @@ export default function App() {
       ],
       { cancelable: true }
     );
+  };
+
+  const handleEditQuestion = (index) => {
+    setEditingQuestionIndex(index);
+    setEditingQuestionText(questions[index]);
+  };
+
+  const handleSaveEditedQuestion = () => {
+    if (editingQuestionIndex !== null && editingQuestionText) {
+      setQuestions(prev => prev.map((q, index) => index === editingQuestionIndex ? editingQuestionText : q));
+      setEditingQuestionIndex(null);
+      setEditingQuestionText('');
+    } else {
+      Alert.alert('Error', 'Please enter a valid question text.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuestionIndex(null);
+    setEditingQuestionText('');
   };
 
   const handleFinishGameSetup = () => {
@@ -314,10 +338,36 @@ export default function App() {
           ) : (
             questions.map((q, index) => (
               <View key={index} style={styles.questionItem}>
-                <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
-                <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
-                  <Text style={styles.deleteButtonText}>X</Text>
-                </TouchableOpacity>
+                {editingQuestionIndex === index ? (
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
+                    value={editingQuestionText}
+                    onChangeText={setEditingQuestionText}
+                  />
+                ) : (
+                  <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
+                )}
+                <View style={{ flexDirection: 'row' }}>
+                  {editingQuestionIndex === index ? (
+                    <>
+                      <TouchableOpacity onPress={handleSaveEditedQuestion}>
+                        <Text style={styles.editSaveButtonText}>Save</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={handleCancelEdit}>
+                        <Text style={styles.editCancelButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <TouchableOpacity onPress={() => handleEditQuestion(index)}>
+                        <Text style={styles.editSaveButtonText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
+                        <Text style={styles.deleteButtonText}>X</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
               </View>
             ))
           )}
@@ -343,6 +393,7 @@ export default function App() {
             value={gameKey}
             onChangeText={setGameKey}
             autoCapitalize="characters"
+            maxLength={6}
           />
           <TextInput
             style={styles.input}
@@ -354,7 +405,7 @@ export default function App() {
             style={styles.input}
             placeholder="4-digit Rejoin Code (e.g., 1234)"
             value={rejoinCode}
-            onChangeText={setRejoinCode}
+            onChangeText={(text) => setRejoinCode(text.replace(/[^0-9]/g, ''))} // Filter non-numeric
             keyboardType="numeric"
             maxLength={4}
           />
@@ -483,6 +534,18 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: 'red',
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  editSaveButtonText: {
+    color: 'blue',
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  editCancelButtonText: {
+    color: 'orange',
     fontWeight: 'bold',
     fontSize: 18,
     marginLeft: 10,
