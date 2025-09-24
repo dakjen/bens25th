@@ -11,7 +11,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "cross-platform-app/dist/$1"
+      "dest": "/$1"
     }
   ]
 }
