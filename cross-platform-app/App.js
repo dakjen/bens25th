@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-const SOCKET_SERVER_URL = 'http://localhost:8082'; // Replace with your backend server URL
+const SOCKET_SERVER_URL = 'http://localhost:3001'; // Replace with your backend server URL
 
 export default function App() {
   const [socket, setSocket] = useState(null);
@@ -464,7 +464,7 @@ export default function App() {
       )}
 
       {currentScreen === 'player' && (
-        <View>
+        <View style={{ alignItems: 'center' }}>
           <Image source={require('./assets/oldben.jpg')} style={styles.homeScreenImage} />
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
