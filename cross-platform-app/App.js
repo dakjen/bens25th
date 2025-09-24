@@ -1,11 +1,34 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, Alert, Image, TouchableOpacity } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
+import { useFonts } from 'expo-font';
+import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
+import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 const SOCKET_SERVER_URL = 'http://localhost:8082'; // Replace with your backend server URL
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_700Bold,
+    PermanentMarker_400Regular,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
   const [socket, setSocket] = useState(null);
   const [gameKey, setGameKey] = useState('');
   const [playerName, setPlayerName] = useState('');
@@ -17,8 +40,10 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [timelineDays, setTimelineDays] = useState('');
   const [location, setLocation] = useState('');
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]); // Each question will be { questionText, imageUrl, caption }
   const [currentQuestionText, setCurrentQuestionText] = useState('');
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [currentCaption, setCurrentCaption] = useState('');
   const [bulkQuestionText, setBulkQuestionText] = useState('');
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
   const [editingQuestionText, setEditingQuestionText] = useState('');
@@ -62,6 +87,8 @@ export default function App() {
       setAdminScreenStep('initial'); // Reset admin screen step
       setEditingQuestionIndex(null);
       setEditingQuestionText('');
+      setCurrentImageUrl(null);
+      setCurrentCaption('');
     });
 
     newSocket.on('disconnect', () => {
@@ -79,10 +106,25 @@ export default function App() {
     setAdminScreenStep('questions');
   };
 
+  const handleImagePick = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setCurrentImageUrl(result.assets[0].uri);
+    }
+  };
+
   const handleAddQuestion = () => {
     if (currentQuestionText) {
-      setQuestions(prev => [...prev, currentQuestionText]);
+      setQuestions(prev => [...prev, { questionText: currentQuestionText, imageUrl: currentImageUrl, caption: currentCaption }]);
       setCurrentQuestionText('');
+      setCurrentImageUrl(null);
+      setCurrentCaption('');
     } else {
       Alert.alert('Error', 'Please enter a question.');
     }
@@ -92,7 +134,9 @@ export default function App() {
     if (bulkQuestionText) {
       const parsedQuestions = bulkQuestionText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
       if (parsedQuestions.length > 0) {
-        setQuestions(prev => [...prev, ...parsedQuestions]);
+        // For bulk added questions, image and caption will be null/empty
+        const newQuestions = parsedQuestions.map(qText => ({ questionText: qText, imageUrl: null, caption: '' }));
+        setQuestions(prev => [...prev, ...newQuestions]);
         setBulkQuestionText('');
       } else {
         Alert.alert('Error', 'No valid questions found in the pasted text.');
@@ -118,14 +162,18 @@ export default function App() {
 
   const handleEditQuestion = (index) => {
     setEditingQuestionIndex(index);
-    setEditingQuestionText(questions[index]);
+    setEditingQuestionText(questions[index].questionText);
+    setCurrentImageUrl(questions[index].imageUrl);
+    setCurrentCaption(questions[index].caption);
   };
 
   const handleSaveEditedQuestion = () => {
     if (editingQuestionIndex !== null && editingQuestionText) {
-      setQuestions(prev => prev.map((q, index) => index === editingQuestionIndex ? editingQuestionText : q));
+      setQuestions(prev => prev.map((q, index) => index === editingQuestionIndex ? { questionText: editingQuestionText, imageUrl: currentImageUrl, caption: currentCaption } : q));
       setEditingQuestionIndex(null);
       setEditingQuestionText('');
+      setCurrentImageUrl(null);
+      setCurrentCaption('');
     } else {
       Alert.alert('Error', 'Please enter a valid question text.');
     }
@@ -134,6 +182,8 @@ export default function App() {
   const handleCancelEdit = () => {
     setEditingQuestionIndex(null);
     setEditingQuestionText('');
+    setCurrentImageUrl(null);
+    setCurrentCaption('');
   };
 
   const handleFinishGameSetup = () => {
@@ -223,7 +273,7 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayoutRootView}>
       <Text style={styles.title}>Benjamin's 25th Birthday</Text>
       <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
 
@@ -287,6 +337,18 @@ export default function App() {
             onChangeText={setCurrentQuestionText}
           />
           <View style={styles.buttonSpacing}>
+            <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+              <Text style={styles.buttonText}>Upload Photo</Text>
+            </TouchableOpacity>
+          </View>
+          {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+          <TextInput
+            style={styles.input}
+            placeholder="Caption (optional)"
+            value={currentCaption}
+            onChangeText={setCurrentCaption}
+          />
+          <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
               <Text style={styles.buttonText}>Add Question</Text>
             </TouchableOpacity>
@@ -311,7 +373,7 @@ export default function App() {
               <Text style={styles.gameKeyText}>Current Questions:</Text>
               {questions.map((q, index) => (
                 <View key={index} style={styles.questionItem}>
-                  <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
+                  <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
                 </View>
               ))}
             </View>
@@ -339,13 +401,31 @@ export default function App() {
             questions.map((q, index) => (
               <View key={index} style={styles.questionItem}>
                 {editingQuestionIndex === index ? (
-                  <TextInput
-                    style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
-                    value={editingQuestionText}
-                    onChangeText={setEditingQuestionText}
-                  />
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
+                      value={editingQuestionText}
+                      onChangeText={setEditingQuestionText}
+                    />
+                    {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+                    <View style={styles.buttonSpacing}>
+                      <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+                        <Text style={styles.buttonText}>Change Photo</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Caption (optional)"
+                      value={currentCaption}
+                      onChangeText={setCurrentCaption}
+                    />
+                  </View>
                 ) : (
-                  <Text style={styles.gameKeyText}>{index + 1}. {q}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
+                    {q.imageUrl && <Image source={{ uri: q.imageUrl }} style={styles.uploadedImage} />}
+                    {q.caption && <Text style={styles.gameKeyText}>Caption: {q.caption}</Text>}
+                  </View>
                 )}
                 <View style={{ flexDirection: 'row' }}>
                   {editingQuestionIndex === index ? (
@@ -397,7 +477,7 @@ export default function App() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
+            placeholder="Who are you?"
             value={playerName}
             onChangeText={setPlayerName}
           />
@@ -471,6 +551,7 @@ const styles = StyleSheet.create({
     marginBottom: 5, // Reduced margin to bring subtitle closer
     color: '#ececec',
     textAlign: 'center',
+    fontFamily: 'PermanentMarker_400Regular',
   },
   subtitle: {
     fontSize: 16,
@@ -478,6 +559,7 @@ const styles = StyleSheet.create({
     color: '#ececec',
     fontStyle: 'italic',
     textAlign: 'center',
+    fontFamily: 'Manrope_400Regular',
   },
   buttonSpacing: {
     marginBottom: 15, // Add vertical spacing between buttons
@@ -494,6 +576,7 @@ const styles = StyleSheet.create({
     color: '#ececec',
     fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'Manrope_700Bold',
   },
   input: {
     height: 40,
@@ -524,6 +607,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'Manrope_700Bold',
   },
   questionItem: {
     flexDirection: 'row',
@@ -549,5 +633,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
     marginLeft: 10,
+  },
+  uploadedImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
+    marginTop: 10,
+    marginBottom: 10,
   },
 });
