@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build": "npx expo export:web"
+    "build": "npx expo export:web --bundler webpack"
   },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",
