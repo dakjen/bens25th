@@ -188,8 +188,6 @@ export default function App() {
   };
 
   const handleFinishGameSetup = () => {
-    Alert.alert('Not Yet!', 'This feature is not yet available.');
-    return;
     if (socket) {
       if (questions.length === 0) {
         Alert.alert('Error', 'Please add at least one question.');
@@ -247,8 +245,6 @@ export default function App() {
   };
 
   const handleJoinGame = () => {
-    Alert.alert('Not Yet!', 'This feature is not yet available.');
-    return;
     if (socket && gameKey && playerName && rejoinCode) {
       socket.emit('joinGame', { gameKey, playerName, rejoinCode }, ({ success, message }) => {
         if (success) {
@@ -263,8 +259,6 @@ export default function App() {
   };
 
   const handleRejoinGame = () => {
-    Alert.alert('Not Yet!', 'This feature is not yet available.');
-    return;
     if (socket && gameKey && rejoinCode) {
       socket.emit('rejoinGame', { gameKey, rejoinCode }, ({ success, message, playerName: rejoinedPlayerName }) => {
         if (success) {
