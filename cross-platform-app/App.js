@@ -295,7 +295,7 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'initial' && (
-        <View>
+        <View style={{ paddingVertical: 20 }}>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
               <Text style={styles.buttonText}>Back to Home</Text>
@@ -323,7 +323,7 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'add' && (
-        <View>
+        <View style={{ paddingVertical: 20 }}>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setAdminScreenStep('initial')}>
               <Text style={styles.buttonText}>Back to Game Details</Text>
@@ -388,7 +388,7 @@ export default function App() {
       )}
 
       {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'manage' && (
-        <View>
+        <View style={{ paddingVertical: 20 }}>
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('add')}>
               <Text style={styles.buttonText}>Back (Add More Questions)</Text>
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   },
   gameKeyText: {
     fontSize: 18,
-    marginVertical: 10,
+    marginVertical: 15, // Increased vertical margin
     color: '#ececec',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 15, // Increased vertical margin
     paddingHorizontal: 10,
     width: '80%',
     backgroundColor: '#fff',
