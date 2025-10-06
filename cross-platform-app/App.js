@@ -641,124 +641,126 @@ export default function App() {
       {currentScreen === 'game' && (
         <View style={styles.gameContainer}> {/* NEW: Use a dedicated style for game screen */}
           <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
-          {isAdmin ? (
-            <>
-              {adminGameView === 'overview' && (
-                <View>
-                  <Text style={styles.gameKeyText}>You are the Admin</Text>
-                  <View style={styles.buttonSpacing}>
-                    <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                      <Text style={styles.buttonText}>Save Game</Text>
-                    </TouchableOpacity>
+          <> {/* NEW Fragment */}
+            {isAdmin ? (
+              <>
+                {adminGameView === 'overview' && (
+                  <View>
+                    <Text style={styles.gameKeyText}>You are the Admin</Text>
+                    <View style={styles.buttonSpacing}>
+                      <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                        <Text style={styles.buttonText}>Save Game</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.buttonSpacing}>
+                      <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                        <Text style={styles.buttonText}>Delete Game</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.buttonSpacing}>
+                      <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
+                        <Text style={styles.buttonText}>Review Answers</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* Admin controls will go here later */}
                   </View>
-                  <View style={styles.buttonSpacing}>
-                    <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                      <Text style={styles.buttonText}>Delete Game</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.buttonSpacing}>
-                    <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
-                      <Text style={styles.buttonText}>Review Answers</Text>
-                    </TouchableOpacity>
-                  </View>
-                  {/* Admin controls will go here later */}
-                </View>
-              )}
+                )}
 
-              {adminGameView === 'reviewAnswers' && (
-                <ScrollView style={styles.reviewAnswersContainer}>
-                  <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
-                    <Text style={styles.buttonText}>Back to Admin Overview</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
-                  {submittedAnswers.length === 0 ? (
-                    <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
-                  ) : (
-                    Object.entries(
-                      submittedAnswers.reduce((acc, answer) => {
-                        (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                {adminGameView === 'reviewAnswers' && (
+                  <ScrollView style={styles.reviewAnswersContainer}>
+                    <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
+                      <Text style={styles.buttonText}>Back to Admin Overview</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
+                    {submittedAnswers.length === 0 ? (
+                      <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
+                    ) : (
+                      Object.entries(
+                        submittedAnswers.reduce((acc, answer) => {
+                          (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                          return acc;
+                        }, {})
+                      ).map(([teamName, teamAnswers]) => (
+                        <View key={teamName} style={styles.teamAnswersContainer}>
+                          <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
+                          {teamAnswers.map((answer, ansIndex) => (
+                            <View key={ansIndex} style={styles.submittedAnswerItem}>
+                              <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                              {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
+                              {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
+                              <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
+                              <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                              {answer.status === 'pending' && (
+                                <View style={styles.reviewButtonsContainer}>
+                                  <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
+                                    <Text style={styles.buttonText}>Correct</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
+                                    <Text style={styles.buttonText}>Incorrect</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              )}
+                            </View>
+                          ))}
+                        </View>
+                      ))
+                    )}
+                  </ScrollView>
+                )}
+              </>
+            ) : (
+              <View>
+                <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
+                {selectedQuestion ? (
+                  // Clue Detail View
+                  <View style={styles.clueDetailContainer}>
+                    <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
+                    {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
+                    {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
+
+                    {/* Answer Input */}
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Your text answer"
+                      value={playerTextAnswer}
+                      onChangeText={setPlayerTextAnswer}
+                    />
+                    <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
+                      <Text style={styles.buttonText}>Upload Photo</Text>
+                    </TouchableOpacity>
+                    {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+
+                    <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
+                      <Text style={styles.buttonText}>Submit Answer</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
+                      <Text style={styles.buttonText}>Back to Clues</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  // Category and Clue List
+                  <ScrollView style={styles.clueListContainer}>
+                    {Object.entries(
+                      questions.reduce((acc, question) => {
+                        (acc[question.category] = acc[question.category] || []).push(question);
                         return acc;
                       }, {})
-                    ).map(([teamName, teamAnswers]) => (
-                      <View key={teamName} style={styles.teamAnswersContainer}>
-                        <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
-                        {teamAnswers.map((answer, ansIndex) => (
-                          <View key={ansIndex} style={styles.submittedAnswerItem}>
-                            <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
-                            {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
-                            {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
-                            <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
-                            <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
-                            {answer.status === 'pending' && (
-                              <View style={styles.reviewButtonsContainer}>
-                                <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
-                                  <Text style={styles.buttonText}>Correct</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
-                                  <Text style={styles.buttonText}>Incorrect</Text>
-                                </TouchableOpacity>
-                              </View>
-                            )}
-                          </View>
+                    ).map(([category, categoryQuestions]) => (
+                      <View key={category} style={styles.categoryContainer}>
+                        <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
+                        {categoryQuestions.map((question, qIndex) => (
+                          <TouchableOpacity
+                            key={qIndex}
+                            style={styles.clueItem}
+                            onPress={() => setSelectedQuestion(question)}
+                          >
+                            <Text style={styles.clueItemText}>{question.questionText}</Text>
+                            {/* Add an icon or indicator if answered */}
+                          </TouchableOpacity>
                         ))}
                       </View>
                     ))
                   )}
-                </ScrollView>
-              )}
-            </>
-          ) : (
-            <View>
-              <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
-              {selectedQuestion ? (
-                // Clue Detail View
-                <View style={styles.clueDetailContainer}>
-                  <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
-                  {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
-                  {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
-
-                  {/* Answer Input */}
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Your text answer"
-                    value={playerTextAnswer}
-                    onChangeText={setPlayerTextAnswer}
-                  />
-                  <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
-                    <Text style={styles.buttonText}>Upload Photo</Text>
-                  </TouchableOpacity>
-                  {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
-
-                  <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
-                    <Text style={styles.buttonText}>Submit Answer</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
-                    <Text style={styles.buttonText}>Back to Clues</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                // Category and Clue List
-                <ScrollView style={styles.clueListContainer}>
-                  {Object.entries(
-                    questions.reduce((acc, question) => {
-                      (acc[question.category] = acc[question.category] || []).push(question);
-                      return acc;
-                    }, {})
-                  ).map(([category, categoryQuestions]) => (
-                    <View key={category} style={styles.categoryContainer}>
-                      <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
-                      {categoryQuestions.map((question, qIndex) => (
-                        <TouchableOpacity
-                          key={qIndex}
-                          style={styles.clueItem}
-                          onPress={() => setSelectedQuestion(question)}
-                        >
-                          <Text style={styles.clueItemText}>{question.questionText}</Text>
-                          {/* Add an icon or indicator if answered */}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ))}
                 </ScrollView>
               )}
             </View>
@@ -772,7 +774,7 @@ export default function App() {
               <Text key={index} style={styles.gameKeyText}>- {player.name} ({player.id})</Text>
             ))
           )}
-        </View>
+          </>
         </ScrollView>
       )}
     </SafeAreaView>
