@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, Button, Alert, Image, TouchableOpacity } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, View, TextInput, Button, Alert, Image, TouchableOpacity, ScrollView } from 'react-native';
 import React, { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 import { useFonts } from 'expo-font';
@@ -17,9 +17,11 @@ export default function App() {
   const [gameKey, setGameKey] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [rejoinCode, setRejoinCode] = useState('');
+  const [teamName, setTeamName] = useState(''); // NEW
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'admin', 'player', 'game'
   const [adminScreenStep, setAdminScreenStep] = useState('initial'); // 'initial', 'questions'
   const [adminQuestionStep, setAdminQuestionStep] = useState('add'); // 'add', 'manage'
+  const [adminGameView, setAdminGameView] = useState('overview'); // 'overview', 'reviewAnswers' // NEW
   const [playersInGame, setPlayersInGame] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [timelineDays, setTimelineDays] = useState('');
@@ -28,10 +30,16 @@ export default function App() {
   const [currentQuestionText, setCurrentQuestionText] = useState('');
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [currentCaption, setCurrentCaption] = useState('');
+  const [currentCategory, setCurrentCategory] = useState(''); // NEW
+  const [expectedAnswer, setExpectedAnswer] = useState(''); // NEW
   const [bulkQuestionText, setBulkQuestionText] = useState('');
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
   const [editingQuestionText, setEditingQuestionText] = useState('');
   const [showCongratulationsPage, setShowCongratulationsPage] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [playerTextAnswer, setPlayerTextAnswer] = useState('');
+  const [playerImageUri, setPlayerImageUri] = useState(null);
+  const [submittedAnswers, setSubmittedAnswers] = useState([]); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -75,6 +83,16 @@ export default function App() {
       setCurrentImageUrl(null);
       setCurrentCaption('');
     });
+
+    newSocket.on('gameData', ({ questions: gameQuestions }) => { // NEW
+      setQuestions(gameQuestions); // NEW
+      console.log('Received game data:', gameQuestions); // NEW
+    }); // NEW
+
+    newSocket.on('submittedAnswersUpdate', (answers) => { // NEW
+      setSubmittedAnswers(answers); // NEW
+      console.log('Received submitted answers update:', answers); // NEW
+    }); // NEW
 
     newSocket.on('disconnect', () => {
       console.log('Disconnected from server');
@@ -121,12 +139,74 @@ export default function App() {
     }
   };
 
+  const handlePlayerImagePick = async () => { // NEW
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setPlayerImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSubmitAnswer = () => { // NEW
+    if (!playerTextAnswer && !playerImageUri) {
+      Alert.alert('Error', 'Please provide either a text answer or upload a photo.');
+      return;
+    }
+
+    if (socket && selectedQuestion) {
+      socket.emit('submitAnswer', {
+        gameKey,
+        playerName,
+        teamName,
+        questionId: selectedQuestion.id, // Assuming questions have an 'id'
+        submittedTextAnswer: playerTextAnswer,
+        submittedImageUri: playerImageUri,
+      }, ({ success, message }) => {
+        if (success) {
+          Alert.alert('Success', 'Answer submitted for review!');
+          setPlayerTextAnswer('');
+          setPlayerImageUri(null);
+          setSelectedQuestion(null); // Go back to clue list
+          // TODO: Update UI to mark question as answered
+        } else {
+          Alert.alert('Error', message || 'Failed to submit answer.');
+        }
+      });
+    }
+  };
+
+  const handleReviewAnswer = (answerId, status) => { // NEW
+    if (socket) {
+      socket.emit('reviewAnswer', { gameKey, answerId, status }, ({ success, message }) => {
+        if (success) {
+          Alert.alert('Success', `Answer marked as ${status}!`);
+          // The submittedAnswersUpdate listener will refresh the list
+        } else {
+          Alert.alert('Error', message || 'Failed to review answer.');
+        }
+      });
+    }
+  };
+
   const handleAddQuestion = () => {
     if (currentQuestionText) {
-      setQuestions(prev => [...prev, { questionText: currentQuestionText, imageUrl: currentImageUrl, caption: currentCaption }]);
+      setQuestions(prev => [...prev, {
+        questionText: currentQuestionText,
+        imageUrl: currentImageUrl,
+        caption: currentCaption,
+        category: currentCategory, // NEW
+        expectedAnswer: expectedAnswer // NEW
+      }]);
       setCurrentQuestionText('');
       setCurrentImageUrl(null);
       setCurrentCaption('');
+      setCurrentCategory(''); // NEW
+      setExpectedAnswer(''); // NEW
     } else {
       Alert.alert('Error', 'Please enter a question.');
     }
@@ -136,8 +216,8 @@ export default function App() {
     if (bulkQuestionText) {
       const parsedQuestions = bulkQuestionText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
       if (parsedQuestions.length > 0) {
-        // For bulk added questions, image and caption will be null/empty
-        const newQuestions = parsedQuestions.map(qText => ({ questionText: qText, imageUrl: null, caption: '' }));
+        // For bulk added questions, image, caption, category, and expectedAnswer will be null/empty
+        const newQuestions = parsedQuestions.map(qText => ({ questionText: qText, imageUrl: null, caption: '', category: '', expectedAnswer: '' }));
         setQuestions(prev => [...prev, ...newQuestions]);
         setBulkQuestionText('');
       } else {
@@ -167,15 +247,25 @@ export default function App() {
     setEditingQuestionText(questions[index].questionText);
     setCurrentImageUrl(questions[index].imageUrl);
     setCurrentCaption(questions[index].caption);
+    setCurrentCategory(questions[index].category); // NEW
+    setExpectedAnswer(questions[index].expectedAnswer); // NEW
   };
 
   const handleSaveEditedQuestion = () => {
     if (editingQuestionIndex !== null && editingQuestionText) {
-      setQuestions(prev => prev.map((q, index) => index === editingQuestionIndex ? { questionText: editingQuestionText, imageUrl: currentImageUrl, caption: currentCaption } : q));
+      setQuestions(prev => prev.map((q, index) => index === editingQuestionIndex ? {
+        questionText: editingQuestionText,
+        imageUrl: currentImageUrl,
+        caption: currentCaption,
+        category: currentCategory, // NEW
+        expectedAnswer: expectedAnswer // NEW
+      } : q));
       setEditingQuestionIndex(null);
       setEditingQuestionText('');
       setCurrentImageUrl(null);
       setCurrentCaption('');
+      setCurrentCategory(''); // NEW
+      setExpectedAnswer(''); // NEW
     } else {
       Alert.alert('Error', 'Please enter a valid question text.');
     }
@@ -186,6 +276,8 @@ export default function App() {
     setEditingQuestionText('');
     setCurrentImageUrl(null);
     setCurrentCaption('');
+    setCurrentCategory(''); // NEW
+    setExpectedAnswer(''); // NEW
   };
 
   const handleFinishGameSetup = () => {
@@ -248,14 +340,16 @@ export default function App() {
   };
 
   const handleJoinGame = () => {
-    setShowCongratulationsPage(true);
-    return;
-    if (socket && gameKey && playerName && rejoinCode) {
-      socket.emit('joinGame', { gameKey, playerName, rejoinCode }, ({ success, message }) => {
+    if (!gameKey || !playerName || !rejoinCode || !teamName) { // NEW: Add teamName validation
+      Alert.alert('Error', 'Please fill in all fields (Game Key, Who are you?, Team Name, Rejoin Code).');
+      return;
+    }
+    if (socket) {
+      socket.emit('joinGame', { gameKey, playerName, rejoinCode, teamName }, ({ success, message }) => { // NEW: Include teamName
         if (success) {
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Joined Game', `Welcome, ${playerName}!`);
+          Alert.alert('Joined Game', `Welcome, ${playerName} of Team ${teamName}!`); // NEW: Update alert message
         } else {
           Alert.alert('Error', message || 'Failed to join game');
         }
@@ -264,15 +358,17 @@ export default function App() {
   };
 
   const handleRejoinGame = () => {
-    setShowCongratulationsPage(true);
-    return;
-    if (socket && gameKey && rejoinCode) {
-      socket.emit('rejoinGame', { gameKey, rejoinCode }, ({ success, message, playerName: rejoinedPlayerName }) => {
+    if (!gameKey || !rejoinCode || !teamName) { // NEW: Add teamName validation for rejoin
+      Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
+      return;
+    }
+    if (socket) {
+      socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => { // NEW: Include teamName
         if (success) {
           setPlayerName(rejoinedPlayerName || 'Player'); // Set player name if rejoined
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'}!`);
+          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`); // NEW: Update alert message
         } else {
           Alert.alert('Error', message || 'Failed to rejoin game');
         }
@@ -281,7 +377,7 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
+    <SafeAreaView style={styles.safeArea} onLayout={onLayoutRootView}>
       {showCongratulationsPage && (
         <View style={styles.congratulationsContainer}>
           <Text style={styles.congratulationsText}>Congratulations!</Text>
@@ -292,7 +388,7 @@ export default function App() {
       )}
 
       {!showCongratulationsPage && (
-        <View style={styles.container} onLayout={onLayoutRootView}>
+        <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Benjamin's 25th Birthday</Text>
       <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
 
@@ -368,6 +464,18 @@ export default function App() {
             placeholder="Caption (optional)"
             value={currentCaption}
             onChangeText={setCurrentCaption}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Category (e.g., 'History', 'Science')"
+            value={currentCategory}
+            onChangeText={setCurrentCategory}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Expected Answer (for admin review)"
+            value={expectedAnswer}
+            onChangeText={setExpectedAnswer}
           />
           <View style={styles.buttonSpacing}>
             <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
@@ -505,6 +613,12 @@ export default function App() {
           />
           <TextInput
             style={styles.input}
+            placeholder="Team Name"
+            value={teamName}
+            onChangeText={setTeamName}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="4-digit Rejoin Code (e.g., 1234)"
             value={rejoinCode}
             onChangeText={(text) => setRejoinCode(text.replace(/[^0-9]/g, ''))} // Filter non-numeric
@@ -525,25 +639,131 @@ export default function App() {
       )}
 
       {currentScreen === 'game' && (
-        <View>
+        <View style={styles.gameContainer}> {/* NEW: Use a dedicated style for game screen */}
           <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
           {isAdmin ? (
-            <View>
-              <Text style={styles.gameKeyText}>You are the Admin</Text>
-              <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                  <Text style={styles.buttonText}>Save Game</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                  <Text style={styles.buttonText}>Delete Game</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <>
+              {adminGameView === 'overview' && (
+                <View>
+                  <Text style={styles.gameKeyText}>You are the Admin</Text>
+                  <View style={styles.buttonSpacing}>
+                    <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                      <Text style={styles.buttonText}>Save Game</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.buttonSpacing}>
+                    <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                      <Text style={styles.buttonText}>Delete Game</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.buttonSpacing}>
+                    <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
+                      <Text style={styles.buttonText}>Review Answers</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* Admin controls will go here later */}
+                </View>
+              )}
+
+              {adminGameView === 'reviewAnswers' && (
+                <ScrollView style={styles.reviewAnswersContainer}>
+                  <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
+                    <Text style={styles.buttonText}>Back to Admin Overview</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
+                  {submittedAnswers.length === 0 ? (
+                    <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
+                  ) : (
+                    Object.entries(
+                      submittedAnswers.reduce((acc, answer) => {
+                        (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                        return acc;
+                      }, {})
+                    ).map(([teamName, teamAnswers]) => (
+                      <View key={teamName} style={styles.teamAnswersContainer}>
+                        <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
+                        {teamAnswers.map((answer, ansIndex) => (
+                          <View key={ansIndex} style={styles.submittedAnswerItem}>
+                            <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                            {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
+                            {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
+                            <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
+                            <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                            {answer.status === 'pending' && (
+                              <View style={styles.reviewButtonsContainer}>
+                                <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
+                                  <Text style={styles.buttonText}>Correct</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
+                                  <Text style={styles.buttonText}>Incorrect</Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
+              )}
+            </>
           ) : (
-            <Text style={styles.gameKeyText}>Playing as: {playerName}</Text>
+            <View>
+              <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
+              {selectedQuestion ? (
+                // Clue Detail View
+                <View style={styles.clueDetailContainer}>
+                  <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
+                  {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
+                  {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
+
+                  {/* Answer Input */}
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Your text answer"
+                    value={playerTextAnswer}
+                    onChangeText={setPlayerTextAnswer}
+                  />
+                  <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
+                    <Text style={styles.buttonText}>Upload Photo</Text>
+                  </TouchableOpacity>
+                  {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+
+                  <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
+                    <Text style={styles.buttonText}>Submit Answer</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
+                    <Text style={styles.buttonText}>Back to Clues</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                // Category and Clue List
+                <ScrollView style={styles.clueListContainer}>
+                  {Object.entries(
+                    questions.reduce((acc, question) => {
+                      (acc[question.category] = acc[question.category] || []).push(question);
+                      return acc;
+                    }, {})
+                  ).map(([category, categoryQuestions]) => (
+                    <View key={category} style={styles.categoryContainer}>
+                      <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
+                      {categoryQuestions.map((question, qIndex) => (
+                        <TouchableOpacity
+                          key={qIndex}
+                          style={styles.clueItem}
+                          onPress={() => setSelectedQuestion(question)}
+                        >
+                          <Text style={styles.clueItemText}>{question.questionText}</Text>
+                          {/* Add an icon or indicator if answered */}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
           )}
+          {/* Players in Game display */}
           <Text style={styles.gameKeyText}>Players in Game:</Text>
           {playersInGame.length === 0 ? (
             <Text style={styles.gameKeyText}>No players yet.</Text>
@@ -552,21 +772,135 @@ export default function App() {
               <Text key={index} style={styles.gameKeyText}>- {player.name} ({player.id})</Text>
             ))
           )}
-          {/* Add game specific UI here */}
         </View>
       )}
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gameContainer: {
     flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+  },
+  clueListContainer: {
+    flex: 1,
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  categoryContainer: {
+    marginBottom: 20,
+    width: '100%',
+  },
+  categoryTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#ececec',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: 'Manrope_700Bold',
+  },
+  clueItem: {
+    backgroundColor: '#6f9a7d',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  clueItemText: {
+    color: '#ececec',
+    fontSize: 16,
+    fontFamily: 'Manrope_500Medium',
+    textAlign: 'center',
+  },
+  clueDetailContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    padding: 20,
+  },
+  clueDetailText: {
+    fontSize: 20,
+    color: '#ececec',
+    marginBottom: 15,
+    textAlign: 'center',
+    fontFamily: 'Manrope_500Medium',
+  },
+  clueImage: {
+    width: 250,
+    height: 250,
+    resizeMode: 'contain',
+    marginBottom: 15,
+  },
+  clueCaption: {
+    fontSize: 14,
+    color: '#ececec',
+    fontStyle: 'italic',
+    marginBottom: 15,
+    textAlign: 'center',
+    fontFamily: 'Manrope_400Regular',
+  },
+  reviewAnswersContainer: {
+    flex: 1,
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  teamAnswersContainer: {
+    backgroundColor: '#2a6f91', // Slightly different background for team
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+  },
+  teamNameTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ececec',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: 'Manrope_700Bold',
+  },
+  submittedAnswerItem: {
+    backgroundColor: '#4a8f91', // Slightly different background for answer item
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  reviewButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  reviewButtonCorrect: {
+    backgroundColor: '#4CAF50', // Green
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  reviewButtonIncorrect: {
+    backgroundColor: '#F44336', // Red
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  container: { // This style will now be used for specific components, not the main layout
     backgroundColor: '#155591',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  safeArea: { // NEW
+    flex: 1,
+    backgroundColor: '#155591',
+  },
+  scrollViewContent: { // NEW
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: 20, // Add some padding at the bottom for better scrolling
   },
   title: {
     fontSize: 32,
