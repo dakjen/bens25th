@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -17,7 +18,7 @@ export default function App() {
   const [gameKey, setGameKey] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [rejoinCode, setRejoinCode] = useState('');
-  const [teamName, setTeamName] = useState(''); // NEW
+  const [teamName, setTeamName] = useState('');
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'admin', 'player', 'game'
   const [adminScreenStep, setAdminScreenStep] = useState('initial'); // 'initial', 'questions'
   const [adminQuestionStep, setAdminQuestionStep] = useState('add'); // 'add', 'manage'
@@ -26,12 +27,12 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [timelineDays, setTimelineDays] = useState('');
   const [location, setLocation] = useState('');
-  const [questions, setQuestions] = useState([]); // Each question will be { questionText, imageUrl, caption }
+  const [questions, setQuestions] = useState([]); // Each question will be { questionText, imageUrl, caption, category, expectedAnswer }
   const [currentQuestionText, setCurrentQuestionText] = useState('');
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [currentCaption, setCurrentCaption] = useState('');
-  const [currentCategory, setCurrentCategory] = useState(''); // NEW
-  const [expectedAnswer, setExpectedAnswer] = useState(''); // NEW
+  const [currentCategory, setCurrentCategory] = useState('');
+  const [expectedAnswer, setExpectedAnswer] = useState('');
   const [bulkQuestionText, setBulkQuestionText] = useState('');
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
   const [editingQuestionText, setEditingQuestionText] = useState('');
@@ -39,7 +40,7 @@ export default function App() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [playerTextAnswer, setPlayerTextAnswer] = useState('');
   const [playerImageUri, setPlayerImageUri] = useState(null);
-  const [submittedAnswers, setSubmittedAnswers] = useState([]); // NEW
+  const [submittedAnswers, setSubmittedAnswers] = useState([]);
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -84,15 +85,15 @@ export default function App() {
       setCurrentCaption('');
     });
 
-    newSocket.on('gameData', ({ questions: gameQuestions }) => { // NEW
-      setQuestions(gameQuestions); // NEW
-      console.log('Received game data:', gameQuestions); // NEW
-    }); // NEW
+    newSocket.on('gameData', ({ questions: gameQuestions }) => {
+      setQuestions(gameQuestions);
+      console.log('Received game data:', gameQuestions);
+    });
 
-    newSocket.on('submittedAnswersUpdate', (answers) => { // NEW
-      setSubmittedAnswers(answers); // NEW
-      console.log('Received submitted answers update:', answers); // NEW
-    }); // NEW
+    newSocket.on('submittedAnswersUpdate', (answers) => {
+      setSubmittedAnswers(answers);
+      console.log('Received submitted answers update:', answers);
+    });
 
     newSocket.on('disconnect', () => {
       console.log('Disconnected from server');
@@ -139,7 +140,7 @@ export default function App() {
     }
   };
 
-  const handlePlayerImagePick = async () => { // NEW
+  const handlePlayerImagePick = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -152,7 +153,7 @@ export default function App() {
     }
   };
 
-  const handleSubmitAnswer = () => { // NEW
+  const handleSubmitAnswer = () => {
     if (!playerTextAnswer && !playerImageUri) {
       Alert.alert('Error', 'Please provide either a text answer or upload a photo.');
       return;
@@ -180,7 +181,7 @@ export default function App() {
     }
   };
 
-  const handleReviewAnswer = (answerId, status) => { // NEW
+  const handleReviewAnswer = (answerId, status) => {
     if (socket) {
       socket.emit('reviewAnswer', { gameKey, answerId, status }, ({ success, message }) => {
         if (success) {
@@ -199,14 +200,14 @@ export default function App() {
         questionText: currentQuestionText,
         imageUrl: currentImageUrl,
         caption: currentCaption,
-        category: currentCategory, // NEW
-        expectedAnswer: expectedAnswer // NEW
+        category: currentCategory,
+        expectedAnswer: expectedAnswer
       }]);
       setCurrentQuestionText('');
       setCurrentImageUrl(null);
       setCurrentCaption('');
-      setCurrentCategory(''); // NEW
-      setExpectedAnswer(''); // NEW
+      setCurrentCategory('');
+      setExpectedAnswer('');
     } else {
       Alert.alert('Error', 'Please enter a question.');
     }
@@ -223,8 +224,6 @@ export default function App() {
       } else {
         Alert.alert('Error', 'No valid questions found in the pasted text.');
       }
-    } else {
-      Alert.alert('Error', 'Please paste questions into the bulk entry field.');
     }
   };
 
@@ -247,8 +246,8 @@ export default function App() {
     setEditingQuestionText(questions[index].questionText);
     setCurrentImageUrl(questions[index].imageUrl);
     setCurrentCaption(questions[index].caption);
-    setCurrentCategory(questions[index].category); // NEW
-    setExpectedAnswer(questions[index].expectedAnswer); // NEW
+    setCurrentCategory(questions[index].category);
+    setExpectedAnswer(questions[index].expectedAnswer);
   };
 
   const handleSaveEditedQuestion = () => {
@@ -257,15 +256,15 @@ export default function App() {
         questionText: editingQuestionText,
         imageUrl: currentImageUrl,
         caption: currentCaption,
-        category: currentCategory, // NEW
-        expectedAnswer: expectedAnswer // NEW
+        category: currentCategory,
+        expectedAnswer: expectedAnswer
       } : q));
       setEditingQuestionIndex(null);
       setEditingQuestionText('');
       setCurrentImageUrl(null);
       setCurrentCaption('');
-      setCurrentCategory(''); // NEW
-      setExpectedAnswer(''); // NEW
+      setCurrentCategory('');
+      setExpectedAnswer('');
     } else {
       Alert.alert('Error', 'Please enter a valid question text.');
     }
@@ -276,8 +275,8 @@ export default function App() {
     setEditingQuestionText('');
     setCurrentImageUrl(null);
     setCurrentCaption('');
-    setCurrentCategory(''); // NEW
-    setExpectedAnswer(''); // NEW
+    setCurrentCategory('');
+    setExpectedAnswer('');
   };
 
   const handleFinishGameSetup = () => {
@@ -340,16 +339,16 @@ export default function App() {
   };
 
   const handleJoinGame = () => {
-    if (!gameKey || !playerName || !rejoinCode || !teamName) { // NEW: Add teamName validation
+    if (!gameKey || !playerName || !rejoinCode || !teamName) {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Who are you?, Team Name, Rejoin Code).');
       return;
     }
     if (socket) {
-      socket.emit('joinGame', { gameKey, playerName, rejoinCode, teamName }, ({ success, message }) => { // NEW: Include teamName
+      socket.emit('joinGame', { gameKey, playerName, rejoinCode, teamName }, ({ success, message }) => {
         if (success) {
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Joined Game', `Welcome, ${playerName} of Team ${teamName}!`); // NEW: Update alert message
+          Alert.alert('Joined Game', `Welcome, ${playerName} of Team ${teamName}!`);
         } else {
           Alert.alert('Error', message || 'Failed to join game');
         }
@@ -358,17 +357,17 @@ export default function App() {
   };
 
   const handleRejoinGame = () => {
-    if (!gameKey || !rejoinCode || !teamName) { // NEW: Add teamName validation for rejoin
+    if (!gameKey || !rejoinCode || !teamName) {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
       return;
     }
     if (socket) {
-      socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => { // NEW: Include teamName
+      socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
         if (success) {
           setPlayerName(rejoinedPlayerName || 'Player'); // Set player name if rejoined
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`); // NEW: Update alert message
+          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`);
         } else {
           Alert.alert('Error', message || 'Failed to rejoin game');
         }
@@ -389,392 +388,393 @@ export default function App() {
 
       {!showCongratulationsPage && (
         <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Benjamin's 25th Birthday</Text>
-      <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
+          <Text style={styles.title}>Benjamin's 25th Birthday</Text>
+          <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
 
-      <StatusBar style="auto" />
+          <StatusBar style="auto" />
 
-      {currentScreen === 'home' && (
-        <View style={{ alignItems: 'center' }}>
-          <Image source={require('./assets/benfunnyhs.jpg')} style={styles.homeScreenImage} />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('admin')}>
-              <Text style={styles.buttonText}>Create Game (Admin)</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('player')}>
-              <Text style={styles.buttonText}>Join Game (Player)</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentScreen === 'admin' && adminScreenStep === 'initial' && (
-        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-          <Image source={require('./assets/france.jpeg')} style={styles.homeScreenImage} />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
-              <Text style={styles.buttonText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Timeline (days)"
-            value={timelineDays}
-            onChangeText={setTimelineDays}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Location"
-            value={location}
-            onChangeText={setLocation}
-          />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleProceedToQuestions}>
-              <Text style={styles.buttonText}>Proceed to Questions</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'add' && (
-        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setAdminScreenStep('initial')}>
-              <Text style={styles.buttonText}>Back to Game Details</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.gameKeyText}>Add Questions</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Question Text"
-            value={currentQuestionText}
-            onChangeText={setCurrentQuestionText}
-          />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleImagePick}>
-              <Text style={styles.buttonText}>Upload Photo</Text>
-            </TouchableOpacity>
-          </View>
-          {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
-          <TextInput
-            style={styles.input}
-            placeholder="Caption (optional)"
-            value={currentCaption}
-            onChangeText={setCurrentCaption}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Category (e.g., 'History', 'Science')"
-            value={currentCategory}
-            onChangeText={setCurrentCategory}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Expected Answer (for admin review)"
-            value={expectedAnswer}
-            onChangeText={setExpectedAnswer}
-          />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
-              <Text style={styles.buttonText}>Add Question</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TextInput
-            style={[styles.input, styles.multilineInput]}
-            placeholder="Paste multiple questions here (one per line)"
-            value={bulkQuestionText}
-            onChangeText={setBulkQuestionText}
-            multiline
-            numberOfLines={4}
-          />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleParseAndAddQuestions}>
-              <Text style={styles.buttonText}>Parse and Add Questions</Text>
-            </TouchableOpacity>
-          </View>
-
-          {questions.length > 0 && (
-            <View>
-              <Text style={styles.gameKeyText}>Current Questions:</Text>
-              {questions.map((q, index) => (
-                <View key={index} style={styles.questionItem}>
-                  <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('manage')}>
-              <Text style={styles.buttonText}>Next (Manage Questions)</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'manage' && (
-        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('add')}>
-              <Text style={styles.buttonText}>Back (Add More Questions)</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.gameKeyText}>Manage Questions</Text>
-          {questions.length === 0 ? (
-            <Text style={styles.gameKeyText}>No questions added yet.</Text>
-          ) : (
-            questions.map((q, index) => (
-              <View key={index} style={styles.questionItem}>
-                {editingQuestionIndex === index ? (
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
-                      value={editingQuestionText}
-                      onChangeText={setEditingQuestionText}
-                    />
-                    {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
-                    <View style={styles.buttonSpacing}>
-                      <TouchableOpacity style={styles.button} onPress={handleImagePick}>
-                        <Text style={styles.buttonText}>Change Photo</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Caption (optional)"
-                      value={currentCaption}
-                      onChangeText={setCurrentCaption}
-                    />
-                  </View>
-                ) : (
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
-                    {q.imageUrl && <Image source={{ uri: q.imageUrl }} style={styles.uploadedImage} />}
-                    {q.caption && <Text style={styles.gameKeyText}>Caption: {q.caption}</Text>}
-                  </View>
-                )}
-                <View style={{ flexDirection: 'row' }}>
-                  {editingQuestionIndex === index ? (
-                    <>
-                      <TouchableOpacity onPress={handleSaveEditedQuestion}>
-                        <Text style={styles.editSaveButtonText}>Save</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={handleCancelEdit}>
-                        <Text style={styles.editCancelButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <TouchableOpacity onPress={() => handleEditQuestion(index)}>
-                        <Text style={styles.editSaveButtonText}>Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
-                        <Text style={styles.deleteButtonText}>X</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
+          {currentScreen === 'home' && (
+            <View style={{ alignItems: 'center' }}>
+              <Image source={require('./assets/benfunnyhs.jpg')} style={styles.homeScreenImage} />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('admin')}>
+                  <Text style={styles.buttonText}>Create Game (Admin)</Text>
+                </TouchableOpacity>
               </View>
-            ))
-          )}
-
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleFinishGameSetup}>
-              <Text style={styles.buttonText}>Finish Game Setup</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentScreen === 'player' && (
-        <View style={{ alignItems: 'center' }}>
-          <Image source={require('./assets/oldben.jpg')} style={styles.homeScreenImage} />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
-              <Text style={styles.buttonText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Game Key"
-            value={gameKey}
-            onChangeText={setGameKey}
-            autoCapitalize="characters"
-            maxLength={6}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Who are you?"
-            value={playerName}
-            onChangeText={setPlayerName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Team Name"
-            value={teamName}
-            onChangeText={setTeamName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="4-digit Rejoin Code (e.g., 1234)"
-            value={rejoinCode}
-            onChangeText={(text) => setRejoinCode(text.replace(/[^0-9]/g, ''))} // Filter non-numeric
-            keyboardType="numeric"
-            maxLength={4}
-          />
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleJoinGame}>
-              <Text style={styles.buttonText}>Join Game</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.buttonSpacing}>
-            <TouchableOpacity style={styles.button} onPress={handleRejoinGame}>
-              <Text style={styles.buttonText}>Rejoin Game</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentScreen === 'game' && (
-        <View style={styles.gameContainer}> {/* NEW: Use a dedicated style for game screen */}
-          <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
-          <> {/* NEW Fragment */}
-            {isAdmin ? (
-              <>
-                {adminGameView === 'overview' && (
-                  <View>
-                    <Text style={styles.gameKeyText}>You are the Admin</Text>
-                    <View style={styles.buttonSpacing}>
-                      <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                        <Text style={styles.buttonText}>Save Game</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.buttonSpacing}>
-                      <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                        <Text style={styles.buttonText}>Delete Game</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.buttonSpacing}>
-                      <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
-                        <Text style={styles.buttonText}>Review Answers</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {/* Admin controls will go here later */}
-                  </View>
-                )}
-
-                {adminGameView === 'reviewAnswers' && (
-                  <ScrollView style={styles.reviewAnswersContainer}>
-                    <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
-                      <Text style={styles.buttonText}>Back to Admin Overview</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
-                    {submittedAnswers.length === 0 ? (
-                      <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
-                    ) : (
-                      Object.entries(
-                        submittedAnswers.reduce((acc, answer) => {
-                          (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
-                          return acc;
-                        }, {})
-                      ).map(([teamName, teamAnswers]) => (
-                        <View key={teamName} style={styles.teamAnswersContainer}>
-                          <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
-                          {teamAnswers.map((answer, ansIndex) => (
-                            <View key={ansIndex} style={styles.submittedAnswerItem}>
-                              <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
-                              {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
-                              {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
-                              <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
-                              <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
-                              {answer.status === 'pending' && (
-                                <View style={styles.reviewButtonsContainer}>
-                                  <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
-                                    <Text style={styles.buttonText}>Correct</Text>
-                                  </TouchableOpacity>
-                                  <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
-                                    <Text style={styles.buttonText}>Incorrect</Text>
-                                  </TouchableOpacity>
-                                </View>
-                              )}
-                            </View>
-                          ))}
-                        </View>
-                      ))
-                    )}
-                  </ScrollView>
-                )}
-              </>
-            ) : (
-              <View>
-                <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
-                {selectedQuestion ? (
-                  // Clue Detail View
-                  <View style={styles.clueDetailContainer}>
-                    <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
-                    {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
-                    {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
-
-                    {/* Answer Input */}
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Your text answer"
-                      value={playerTextAnswer}
-                      onChangeText={setPlayerTextAnswer}
-                    />
-                    <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
-                      <Text style={styles.buttonText}>Upload Photo</Text>
-                    </TouchableOpacity>
-                    {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
-
-                    <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
-                      <Text style={styles.buttonText}>Submit Answer</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
-                      <Text style={styles.buttonText}>Back to Clues</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  // Category and Clue List
-                  <ScrollView style={styles.clueListContainer}>
-                    {Object.entries(
-                      questions.reduce((acc, question) => {
-                        (acc[question.category] = acc[question.category] || []).push(question);
-                        return acc;
-                      }, {})
-                    ).map(([category, categoryQuestions]) => (
-                      <View key={category} style={styles.categoryContainer}>
-                        <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
-                        {categoryQuestions.map((question, qIndex) => (
-                          <TouchableOpacity
-                            key={qIndex}
-                            style={styles.clueItem}
-                            onPress={() => setSelectedQuestion(question)}
-                          >
-                            <Text style={styles.clueItemText}>{question.questionText}</Text>
-                            {/* Add an icon or indicator if answered */}
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    ))
-                  )}
-                </ScrollView>
-              )}
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('player')}>
+                  <Text style={styles.buttonText}>Join Game (Player)</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-          {/* Players in Game display */}
-          <Text style={styles.gameKeyText}>Players in Game:</Text>
-          {playersInGame.length === 0 ? (
-            <Text style={styles.gameKeyText}>No players yet.</Text>
-          ) : (
-            playersInGame.map((player, index) => (
-              <Text key={index} style={styles.gameKeyText}>- {player.name} ({player.id})</Text>
-            ))
+
+          {currentScreen === 'admin' && adminScreenStep === 'initial' && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Image source={require('./assets/france.jpeg')} style={styles.homeScreenImage} />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
+                  <Text style={styles.buttonText}>Back to Home</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Timeline (days)"
+                value={timelineDays}
+                onChangeText={setTimelineDays}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Location"
+                value={location}
+                onChangeText={setLocation}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleProceedToQuestions}>
+                  <Text style={styles.buttonText}>Proceed to Questions</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
-          </>
+
+          {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'add' && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setAdminScreenStep('initial')}>
+                  <Text style={styles.buttonText}>Back to Game Details</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.gameKeyText}>Add Questions</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Question Text"
+                value={currentQuestionText}
+                onChangeText={setCurrentQuestionText}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+                  <Text style={styles.buttonText}>Upload Photo</Text>
+                </TouchableOpacity>
+              </View>
+              {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+              <TextInput
+                style={styles.input}
+                placeholder="Caption (optional)"
+                value={currentCaption}
+                onChangeText={setCurrentCaption}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Category (e.g., 'History', 'Science')"
+                value={currentCategory}
+                onChangeText={setCurrentCategory}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Expected Answer (for admin review)"
+                value={expectedAnswer}
+                onChangeText={setExpectedAnswer}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
+                  <Text style={styles.buttonText}>Add Question</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                style={[styles.input, styles.multilineInput]}
+                placeholder="Paste multiple questions here (one per line)"
+                value={bulkQuestionText}
+                onChangeText={setBulkQuestionText}
+                multiline
+                numberOfLines={4}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleParseAndAddQuestions}>
+                  <Text style={styles.buttonText}>Parse and Add Questions</Text>
+                </TouchableOpacity>
+              </View>
+
+              {questions.length > 0 && (
+                <View>
+                  <Text style={styles.gameKeyText}>Current Questions:</Text>
+                  {questions.map((q, index) => (
+                    <View key={index} style={styles.questionItem}>
+                      <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('manage')}>
+                  <Text style={styles.buttonText}>Next (Manage Questions)</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {currentScreen === 'admin' && adminScreenStep === 'questions' && adminQuestionStep === 'manage' && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setAdminQuestionStep('add')}>
+                  <Text style={styles.buttonText}>Back (Add More Questions)</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.gameKeyText}>Manage Questions</Text>
+              {questions.length === 0 ? (
+                <Text style={styles.gameKeyText}>No questions added yet.</Text>
+              ) : (
+                questions.map((q, index) => (
+                  <View key={index} style={styles.questionItem}>
+                    {editingQuestionIndex === index ? (
+                      <View style={{ flex: 1 }}>
+                        <TextInput
+                          style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
+                          value={editingQuestionText}
+                          onChangeText={setEditingQuestionText}
+                        />
+                        {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+                        <View style={styles.buttonSpacing}>
+                          <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+                            <Text style={styles.buttonText}>Change Photo</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Caption (optional)"
+                          value={currentCaption}
+                          onChangeText={setCurrentCaption}
+                        />
+                      </View>
+                    ) : (
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
+                        {q.imageUrl && <Image source={{ uri: q.imageUrl }} style={styles.uploadedImage} />}
+                        {q.caption && <Text style={styles.gameKeyText}>Caption: {q.caption}</Text>}
+                      </View>
+                    )}
+                    <View style={{ flexDirection: 'row' }}>
+                      {editingQuestionIndex === index ? (
+                        <>
+                          <TouchableOpacity onPress={handleSaveEditedQuestion}>
+                            <Text style={styles.editSaveButtonText}>Save</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={handleCancelEdit}>
+                            <Text style={styles.editCancelButtonText}>Cancel</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        <>
+                          <TouchableOpacity onPress={() => handleEditQuestion(index)}>
+                            <Text style={styles.editSaveButtonText}>Edit</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
+                            <Text style={styles.deleteButtonText}>X</Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.buttonSpacing}>
+              <TouchableOpacity style={styles.button} onPress={handleFinishGameSetup}>
+                <Text style={styles.buttonText}>Finish Game Setup</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          )}
+
+          {currentScreen === 'player' && (
+            <View style={{ alignItems: 'center' }}>
+              <Image source={require('./assets/oldben.jpg')} style={styles.homeScreenImage} />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
+                  <Text style={styles.buttonText}>Back to Home</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Game Key"
+                value={gameKey}
+                onChangeText={setGameKey}
+                autoCapitalize="characters"
+                maxLength={6}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Who are you?"
+                value={playerName}
+                onChangeText={setPlayerName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Team Name"
+                value={teamName}
+                onChangeText={setTeamName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="4-digit Rejoin Code (e.g., 1234)"
+                value={rejoinCode}
+                onChangeText={(text) => setRejoinCode(text.replace(/[^0-9]/g, ''))} // Filter non-numeric
+                keyboardType="numeric"
+                maxLength={4}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleJoinGame}>
+                  <Text style={styles.buttonText}>Join Game</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleRejoinGame}>
+                  <Text style={styles.buttonText}>Rejoin Game</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {currentScreen === 'game' && (
+            <View style={styles.gameContainer}> {/* NEW: Use a dedicated style for game screen */}
+              <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
+              <> {/* NEW Fragment */}
+                {isAdmin ? (
+                  <>
+                    {adminGameView === 'overview' && (
+                      <View>
+                        <Text style={styles.gameKeyText}>You are the Admin</Text>
+                        <View style={styles.buttonSpacing}>
+                          <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                            <Text style={styles.buttonText}>Save Game</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <View style={styles.buttonSpacing}>
+                          <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                            <Text style={styles.buttonText}>Delete Game</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <View style={styles.buttonSpacing}>
+                          <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
+                            <Text style={styles.buttonText}>Review Answers</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
+                    {adminGameView === 'reviewAnswers' && (
+                      <ScrollView style={styles.reviewAnswersContainer}>
+                        <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
+                          <Text style={styles.buttonText}>Back to Admin Overview</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
+                        {submittedAnswers.length === 0 ? (
+                          <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
+                        ) : (
+                          Object.entries(
+                            submittedAnswers.reduce((acc, answer) => {
+                              (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                              return acc;
+                            }, {})
+                          ).map(([teamName, teamAnswers]) => (
+                            <View key={teamName} style={styles.teamAnswersContainer}>
+                              <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
+                              {teamAnswers.map((answer, ansIndex) => (
+                                <View key={ansIndex} style={styles.submittedAnswerItem}>
+                                  <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                                  {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
+                                  {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
+                                  <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
+                                  <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                                  {answer.status === 'pending' && (
+                                    <View style={styles.reviewButtonsContainer}>
+                                      <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
+                                        <Text style={styles.buttonText}>Correct</Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
+                                        <Text style={styles.buttonText}>Incorrect</Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  )}
+                                </View>
+                              ))}
+                            </View>
+                          ))
+                        )}
+                      </ScrollView>
+                    )}
+                  </>
+                ) : (
+                  <View>
+                    <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
+                    {selectedQuestion ? (
+                      // Clue Detail View
+                      <View style={styles.clueDetailContainer}>
+                        <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
+                        {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
+                        {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
+
+                        {/* Answer Input */}
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Your text answer"
+                          value={playerTextAnswer}
+                          onChangeText={setPlayerTextAnswer}
+                        />
+                        <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
+                          <Text style={styles.buttonText}>Upload Photo</Text>
+                        </TouchableOpacity>
+                        {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+
+                        <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
+                          <Text style={styles.buttonText}>Submit Answer</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
+                          <Text style={styles.buttonText}>Back to Clues</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      // Category and Clue List
+                      <ScrollView style={styles.clueListContainer}>
+                        {Object.entries(
+                          questions.reduce((acc, question) => {
+                            (acc[question.category] = acc[question.category] || []).push(question);
+                            return acc;
+                          }, {})
+                        ).map(([category, categoryQuestions]) => (
+                          <View key={category} style={styles.categoryContainer}>
+                            <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
+                            {categoryQuestions.map((question, qIndex) => (
+                              <TouchableOpacity
+                                key={qIndex}
+                                style={styles.clueItem}
+                                onPress={() => setSelectedQuestion(question)}
+                              >
+                                <Text style={styles.clueItemText}>{question.questionText}</Text>
+                                {/* Add an icon or indicator if answered */}
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        ))}
+                      </ScrollView>
+                    )}
+                  </View>
+                )}
+                {/* Players in Game display */}
+                <Text style={styles.gameKeyText}>Players in Game:</Text>
+                {playersInGame.length === 0 ? (
+                  <Text style={styles.gameKeyText}>No players yet.</Text>
+                ) : (
+                  playersInGame.map((player, index) => (
+                    <Text key={index} style={styles.gameKeyText}>- {player.name} ({player.id})</Text>
+                  ))
+                )}
+                </>
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -895,19 +895,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  safeArea: { // NEW
+  safeArea: {
     flex: 1,
     backgroundColor: '#155591',
   },
-  scrollViewContent: { // NEW
+  scrollViewContent: {
     flexGrow: 1,
     alignItems: 'center',
-    paddingBottom: 20, // Add some padding at the bottom for better scrolling
+    paddingBottom: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 5, // Reduced margin to bring subtitle closer
+    marginBottom: 5,
     color: '#ececec',
     textAlign: 'center',
     fontFamily: 'PermanentMarker_400Regular',
@@ -921,18 +921,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
   },
   buttonSpacing: {
-    marginBottom: 15, // Add vertical spacing between buttons
+    marginBottom: 15,
     alignItems: 'center',
   },
   mainImage: {
-    width: 200, // Example width
-    height: 200, // Example height
-    resizeMode: 'contain', // or 'cover', 'stretch'
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
     marginBottom: 20,
   },
   gameKeyText: {
     fontSize: 18,
-    marginVertical: 15, // Increased vertical margin
+    marginVertical: 15,
     color: '#ececec',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -942,15 +942,15 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 15, // Increased vertical margin
+    marginBottom: 15,
     paddingHorizontal: 10,
     width: '80%',
     backgroundColor: '#fff',
     color: '#333',
   },
   multilineInput: {
-    height: 100, // Taller for bulk input
-    textAlignVertical: 'top', // Align text to top for multiline
+    height: 100,
+    textAlignVertical: 'top',
     paddingVertical: 10,
   },
   button: {
@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 200, // Example width, adjust as needed
+    width: 200,
   },
   buttonText: {
     color: '#ececec',
@@ -1019,5 +1019,5 @@ const styles = StyleSheet.create({
     color: '#ececec',
     marginBottom: 20,
     textAlign: 'center',
-  },
+  }
 });
