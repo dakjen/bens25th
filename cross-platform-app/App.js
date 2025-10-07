@@ -43,6 +43,7 @@ export default function App() {
   const [submittedAnswers, setSubmittedAnswers] = useState([]);
   const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
   const [adminPassword, setAdminPassword] = useState(''); // NEW
+  const [adminEnteredGameKey, setAdminEnteredGameKey] = useState(''); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -389,12 +390,33 @@ export default function App() {
     const HARDCODED_ADMIN_PASSWORD = 'bensbdayadmin'; // Replace with a strong, secret password in a real app
     if (adminPassword === HARDCODED_ADMIN_PASSWORD) {
       setIsAdmin(true);
-      setCurrentScreen('admin');
+      setCurrentScreen('adminGameKeyEntry'); // NEW: Redirect to game key entry screen
       setShowAdminLogin(false); // Hide login form
       setAdminPassword(''); // Clear password
-      Alert.alert('Success', 'Logged in as Admin!');
+      Alert.alert('Success', 'Logged in as Admin! Please enter Game Key.');
     } else {
       Alert.alert('Error', 'Incorrect Admin Password.');
+    }
+  };
+
+  const handleProceedToAdminReview = () => {
+    if (!adminEnteredGameKey) {
+      Alert.alert('Error', 'Please enter a Game Key.');
+      return;
+    }
+    if (socket) {
+      // Request submitted answers for this game key
+      socket.emit('requestSubmittedAnswers', { gameKey: adminEnteredGameKey }, ({ success, message, answers }) => {
+        if (success) {
+          setGameKey(adminEnteredGameKey); // Set the main gameKey state
+          setSubmittedAnswers(answers); // Populate submitted answers
+          setCurrentScreen('game'); // Go to the game screen
+          setAdminGameView('reviewAnswers'); // Directly show review answers
+          setAdminEnteredGameKey(''); // Clear the entered game key
+        } else {
+          Alert.alert('Error', message || 'Failed to retrieve submitted answers.');
+        }
+      });
     }
   };
 
@@ -455,6 +477,30 @@ export default function App() {
               <View style={styles.buttonSpacing}>
                 <TouchableOpacity style={styles.button} onPress={() => setShowAdminLogin(false)}>
                   <Text style={styles.buttonText}>Back</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {currentScreen === 'adminGameKeyEntry' && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={styles.gameKeyText}>Enter Game Key for Admin Review</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Game Key"
+                value={adminEnteredGameKey}
+                onChangeText={setAdminEnteredGameKey}
+                autoCapitalize="characters"
+                maxLength={6}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleProceedToAdminReview}>
+                  <Text style={styles.buttonText}>Proceed to Review</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('home')}>
+                  <Text style={styles.buttonText}>Back to Home</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -694,73 +740,62 @@ export default function App() {
             <View style={styles.gameContainer}> {/* NEW: Use a dedicated style for game screen */}
               <Text style={styles.gameKeyText}>Game Key: {gameKey}</Text>
               <> {/* NEW Fragment */}
-                {isAdmin ? (
-                  <>
-                    {adminGameView === 'overview' && (
-                      <View>
-                        <Text style={styles.gameKeyText}>You are the Admin</Text>
-                        <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                            <Text style={styles.buttonText}>Save Game</Text>
-                          </TouchableOpacity>
-                        </View>
-                        <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                            <Text style={styles.buttonText}>Delete Game</Text>
-                          </TouchableOpacity>
-                        </View>
-                        <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
-                            <Text style={styles.buttonText}>Review Answers</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-
-                    {adminGameView === 'reviewAnswers' && (
-                      <ScrollView style={styles.reviewAnswersContainer}>
-                        <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('overview')}>
-                          <Text style={styles.buttonText}>Back to Admin Overview</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.gameKeyText}>Submitted Answers for Review</Text>
-                        {submittedAnswers.length === 0 ? (
-                          <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
-                        ) : (
-                          Object.entries(
-                            submittedAnswers.reduce((acc, answer) => {
-                              (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
-                              return acc;
-                            }, {})
-                          ).map(([teamName, teamAnswers]) => (
-                            <View key={teamName} style={styles.teamAnswersContainer}>
-                              <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
-                              {teamAnswers.map((answer, ansIndex) => (
-                                <View key={ansIndex} style={styles.submittedAnswerItem}>
-                                  <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
-                                  {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
-                                  {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
-                                  <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
-                                  <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
-                                  {answer.status === 'pending' && (
-                                    <View style={styles.reviewButtonsContainer}>
-                                      <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
-                                        <Text style={styles.buttonText}>Correct</Text>
+                              {isAdmin ? (
+                                <View> {/* Wrap admin content in a View */}
+                                  {adminGameView === 'reviewAnswers' && (
+                                    <ScrollView style={styles.reviewAnswersContainer}>
+                                      <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('adminGameKeyEntry')}> {/* NEW: Back to Game Key Entry */}
+                                        <Text style={styles.buttonText}>Back to Game Key Entry</Text>
                                       </TouchableOpacity>
-                                      <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
-                                        <Text style={styles.buttonText}>Incorrect</Text>
+                                      <Text style={styles.gameKeyText}>Submitted Answers for Review (Game Key: {gameKey})</Text> {/* NEW: Display gameKey */}
+                                      {submittedAnswers.length === 0 ? (
+                                        <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
+                                      ) : (
+                                        Object.entries(
+                                          submittedAnswers.reduce((acc, answer) => {
+                                            (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                                            return acc;
+                                          }, {})
+                                        ).map(([teamName, teamAnswers]) => (
+                                          <View key={teamName} style={styles.teamAnswersContainer}>
+                                            <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
+                                            {teamAnswers.map((answer, ansIndex) => (
+                                              <View key={ansIndex} style={styles.submittedAnswerItem}>
+                                                <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                                                {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
+                                                {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
+                                                <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
+                                                <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                                                {answer.status === 'pending' && (
+                                                  <View style={styles.reviewButtonsContainer}>
+                                                    <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
+                                                      <Text style={styles.buttonText}>Correct</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
+                                                      <Text style={styles.buttonText}>Incorrect</Text>
+                                                    </TouchableOpacity>
+                                                  </View>
+                                                )}
+                                              </View>
+                                            ))}
+                                          </View>
+                                        ))
+                                      )}
+                                    </ScrollView>
+                                  )}
+                                  {/* Add Save/Delete Game buttons here if needed, or keep them in adminGameKeyEntry */}
+                                    <View style={styles.buttonSpacing}>
+                                      <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                                        <Text style={styles.buttonText}>Save Game</Text>
                                       </TouchableOpacity>
                                     </View>
-                                  )}
+                                    <View style={styles.buttonSpacing}>
+                                      <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                                        <Text style={styles.buttonText}>Delete Game</Text>
+                                      </TouchableOpacity>
+                                    </View>
                                 </View>
-                              ))}
-                            </View>
-                          ))
-                        )}
-                      </ScrollView>
-                    )}
-                  </>
-                ) : (
-                  <View>
+                              ) : (                  <View>
                     <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
                     {selectedQuestion ? (
                       // Clue Detail View
