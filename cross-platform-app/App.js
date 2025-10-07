@@ -41,6 +41,8 @@ export default function App() {
   const [playerTextAnswer, setPlayerTextAnswer] = useState('');
   const [playerImageUri, setPlayerImageUri] = useState(null);
   const [submittedAnswers, setSubmittedAnswers] = useState([]);
+  const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
+  const [adminPassword, setAdminPassword] = useState(''); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -375,11 +377,24 @@ export default function App() {
           setCurrentScreen('game');
           setIsAdmin(false);
           Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`);
-        }
-        else {
+        } else {
           Alert.alert('Error', message || 'Failed to rejoin game');
         }
       });
+    }
+  };
+
+  const handleAdminLogin = () => {
+    // Frontend-only password gate (NOT SECURE)
+    const HARDCODED_ADMIN_PASSWORD = 'bensbdayadmin'; // Replace with a strong, secret password in a real app
+    if (adminPassword === HARDCODED_ADMIN_PASSWORD) {
+      setIsAdmin(true);
+      setCurrentScreen('admin');
+      setShowAdminLogin(false); // Hide login form
+      setAdminPassword(''); // Clear password
+      Alert.alert('Success', 'Logged in as Admin!');
+    } else {
+      Alert.alert('Error', 'Incorrect Admin Password.');
     }
   };
 
@@ -412,6 +427,34 @@ export default function App() {
               <View style={styles.buttonSpacing}>
                 <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('player')}>
                   <Text style={styles.buttonText}>Join Game (Player)</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}> {/* NEW */}
+                <TouchableOpacity style={styles.button} onPress={() => setShowAdminLogin(true)}> {/* NEW */}
+                  <Text style={styles.buttonText}>Admin Login</Text> {/* NEW */}
+                </TouchableOpacity> {/* NEW */}
+              </View> {/* NEW */}
+            </View>
+          )}
+
+          {showAdminLogin && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={styles.gameKeyText}>Admin Login</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Admin Password"
+                secureTextEntry={true}
+                value={adminPassword}
+                onChangeText={setAdminPassword}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={handleAdminLogin}>
+                  <Text style={styles.buttonText}>Login</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setShowAdminLogin(false)}>
+                  <Text style={styles.buttonText}>Back</Text>
                 </TouchableOpacity>
               </View>
             </View>
