@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
 import * as SplashScreen from 'expo-splash-screen';
-import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
+import *s ImagePicker from 'expo-image-picker'; // Added ImagePicker import
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -208,7 +208,8 @@ export default function App() {
       setCurrentCaption('');
       setCurrentCategory('');
       setExpectedAnswer('');
-    } else {
+    }
+    else {
       Alert.alert('Error', 'Please enter a question.');
     }
   };
@@ -221,7 +222,8 @@ export default function App() {
         const newQuestions = parsedQuestions.map(qText => ({ questionText: qText, imageUrl: null, caption: '', category: '', expectedAnswer: '' }));
         setQuestions(prev => [...prev, ...newQuestions]);
         setBulkQuestionText('');
-      } else {
+      }
+      else {
         Alert.alert('Error', 'No valid questions found in the pasted text.');
       }
     }
@@ -265,7 +267,8 @@ export default function App() {
       setCurrentCaption('');
       setCurrentCategory('');
       setExpectedAnswer('');
-    } else {
+    }
+    else {
       Alert.alert('Error', 'Please enter a valid question text.');
     }
   };
@@ -294,7 +297,8 @@ export default function App() {
           setCurrentScreen('game');
           setPlayersInGame([]); // Admin is not a 'player' in this list initially
           Alert.alert('Game Created', `Share this key: ${newGameKey}`);
-        } else {
+        }
+        else {
           Alert.alert('Error', 'Failed to create game');
         }
       });
@@ -306,7 +310,8 @@ export default function App() {
       socket.emit('saveGame', { gameKey }, ({ success }) => {
         if (success) {
           Alert.alert('Game Saved', 'Game state saved successfully!');
-        } else {
+        }
+        else {
           Alert.alert('Error', 'Failed to save game.');
         }
       });
@@ -327,7 +332,8 @@ export default function App() {
                   setCurrentScreen('home'); // Go back to home screen
                   setGameKey('');
                   setIsAdmin(false);
-                } else {
+                }
+                else {
                   Alert.alert('Error', message || 'Failed to delete game.');
                 }
               });
@@ -349,7 +355,8 @@ export default function App() {
           setCurrentScreen('game');
           setIsAdmin(false);
           Alert.alert('Joined Game', `Welcome, ${playerName} of Team ${teamName}!`);
-        } else {
+        }
+        else {
           Alert.alert('Error', message || 'Failed to join game');
         }
       });
@@ -368,7 +375,8 @@ export default function App() {
           setCurrentScreen('game');
           setIsAdmin(false);
           Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`);
-        } else {
+        }
+        else {
           Alert.alert('Error', message || 'Failed to rejoin game');
         }
       });
@@ -703,8 +711,10 @@ export default function App() {
                                 </View>
                               ))}
                             </View>
-                                              ))
-                                          </ScrollView>                    )}
+                          ))
+                        )}
+                      </ScrollView>
+                    )}
                   </>
                 ) : (
                   <View>
