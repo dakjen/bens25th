@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
 import * as SplashScreen from 'expo-splash-screen';
-import *s ImagePicker from 'expo-image-picker'; // Added ImagePicker import
+import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
