@@ -580,8 +580,7 @@ export default function App() {
                     </View>
                   ))}
                 </>
-              </View>
-            )}
+              )}
 
             <View style={styles.buttonSpacing}>
               <TouchableOpacity style={styles.button} onPress={handleFinishGameSetup}>
