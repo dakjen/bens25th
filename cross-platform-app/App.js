@@ -526,58 +526,60 @@ export default function App() {
               {questions.length === 0 ? (
                 <Text style={styles.gameKeyText}>No questions added yet.</Text>
               ) : (
-                questions.map((q, index) => (
-                  <View key={index} style={styles.questionItem}>
-                    {editingQuestionIndex === index ? (
-                      <View style={{ flex: 1 }}>
-                        <TextInput
-                          style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
-                          value={editingQuestionText}
-                          onChangeText={setEditingQuestionText}
-                        />
-                        {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
-                        <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={handleImagePick}>
-                            <Text style={styles.buttonText}>Change Photo</Text>
-                          </TouchableOpacity>
-                        </View>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Caption (optional)"
-                          value={currentCaption}
-                          onChangeText={setCurrentCaption}
-                        />
-                      </View>
-                    ) : (
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
-                        {q.imageUrl && <Image source={{ uri: q.imageUrl }} style={styles.uploadedImage} />}
-                        {q.caption && <Text style={styles.gameKeyText}>Caption: {q.caption}</Text>}
-                      </View>
-                    )}
-                    <View style={{ flexDirection: 'row' }}>
+                <>
+                  {questions.map((q, index) => (
+                    <View key={index} style={styles.questionItem}>
                       {editingQuestionIndex === index ? (
-                        <>
-                          <TouchableOpacity onPress={handleSaveEditedQuestion}>
-                            <Text style={styles.editSaveButtonText}>Save</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity onPress={handleCancelEdit}>
-                            <Text style={styles.editCancelButtonText}>Cancel</Text>
-                          </TouchableOpacity>
-                        </>
+                        <View style={{ flex: 1 }}>
+                          <TextInput
+                            style={[styles.input, { flex: 1, marginRight: 10 }]} // Added flex: 1 to allow TextInput to grow
+                            value={editingQuestionText}
+                            onChangeText={setEditingQuestionText}
+                          />
+                          {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+                          <View style={styles.buttonSpacing}>
+                            <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+                              <Text style={styles.buttonText}>Change Photo</Text>
+                            </TouchableOpacity>
+                          </View>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Caption (optional)"
+                            value={currentCaption}
+                            onChangeText={setCurrentCaption}
+                          />
+                        </View>
                       ) : (
-                        <>
-                          <TouchableOpacity onPress={() => handleEditQuestion(index)}>
-                            <Text style={styles.editSaveButtonText}>Edit</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
-                            <Text style={styles.deleteButtonText}>X</Text>
-                          </TouchableOpacity>
-                        </>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.gameKeyText}>{index + 1}. {q.questionText}</Text>
+                          {q.imageUrl && <Image source={{ uri: q.imageUrl }} style={styles.uploadedImage} />}
+                          {q.caption && <Text style={styles.gameKeyText}>Caption: {q.caption}</Text>}
+                        </View>
                       )}
+                      <View style={{ flexDirection: 'row' }}>
+                        {editingQuestionIndex === index ? (
+                          <>
+                            <TouchableOpacity onPress={handleSaveEditedQuestion}>
+                              <Text style={styles.editSaveButtonText}>Save</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleCancelEdit}>
+                              <Text style={styles.editCancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                          </>
+                        ) : (
+                          <>
+                            <TouchableOpacity onPress={() => handleEditQuestion(index)}>
+                              <Text style={styles.editSaveButtonText}>Edit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleDeleteQuestion(index)}>
+                              <Text style={styles.deleteButtonText}>X</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  ))}
+                </>
               </View>
             )}
 
