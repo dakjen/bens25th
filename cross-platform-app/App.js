@@ -467,7 +467,7 @@ export default function App() {
       {!showCongratulationsPage && (
         <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Benjamin's 25th Birthday</Text>
-          <Text style={styles.subtitle}>the frontal lobe develops. the scavenger hunt begins</Text>
+          <Text style={styles.subtitle}>the frontal lobe develops.\nThe scavenger hunt begins.</Text>
 
           <StatusBar style="auto" />
 
