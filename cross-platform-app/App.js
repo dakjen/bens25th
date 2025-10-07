@@ -41,6 +41,11 @@ export default function App() {
   const [playerTextAnswer, setPlayerTextAnswer] = useState('');
   const [playerImageUri, setPlayerImageUri] = useState(null);
   const [submittedAnswers, setSubmittedAnswers] = useState([]);
+  const [selectedAnswerForReview, setSelectedAnswerForReview] = useState(null);
+  const [currentScore, setCurrentScore] = useState('');
+  const [teamScores, setTeamScores] = useState({});
+  const [playerScore, setPlayerScore] = useState(0); // NEW
+  const [teamAnswers, setTeamAnswers] = useState({}); // NEW // NEW // NEW // NEW
   const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
   const [adminPassword, setAdminPassword] = useState(''); // NEW
   const [adminEnteredGameKey, setAdminEnteredGameKey] = useState(''); // NEW
@@ -96,7 +101,22 @@ export default function App() {
     newSocket.on('submittedAnswersUpdate', (answers) => {
       setSubmittedAnswers(answers);
       console.log('Received submitted answers update:', answers);
-    });
+    }); // NEW
+
+    newSocket.on('teamScoresUpdate', (scores) => { // NEW
+      setTeamScores(scores); // NEW
+      console.log('Received team scores update:', scores); // NEW
+    }); // NEW
+
+    newSocket.on('playerScoresUpdate', (score) => { // NEW
+      setPlayerScore(score); // NEW
+      console.log('Received player score update:', score); // NEW
+    }); // NEW
+
+    newSocket.on('teamAnswersUpdate', (answers) => { // NEW
+      setTeamAnswers(answers); // NEW
+      console.log('Received team answers update:', answers); // NEW
+    }); // NEW
 
     newSocket.on('disconnect', () => {
       console.log('Disconnected from server');
@@ -197,6 +217,21 @@ export default function App() {
     }
   };
 
+  const handleSaveScore = (answerId, score) => {
+    if (socket) {
+      socket.emit('saveScore', { gameKey, answerId, score: parseInt(score) }, ({ success, message }) => {
+        if (success) {
+          Alert.alert('Success', 'Score saved!');
+          setSelectedAnswerForReview(null); // Go back to all answers
+          setCurrentScore(''); // Clear score input
+          // The submittedAnswersUpdate listener will refresh the list
+        } else {
+          Alert.alert('Error', message || 'Failed to save score.');
+        }
+      });
+    }
+  };
+
   const handleAddQuestion = () => {
     if (currentQuestionText) {
       setQuestions(prev => [...prev, {
@@ -286,8 +321,6 @@ export default function App() {
   };
 
   const handleFinishGameSetup = () => {
-    setShowCongratulationsPage(true);
-    return;
     if (socket) {
       if (questions.length === 0) {
         Alert.alert('Error', 'Please add at least one question.');
@@ -742,88 +775,118 @@ export default function App() {
               <> {/* NEW Fragment */}
                               {isAdmin ? (
                                 <View> {/* Wrap admin content in a View */}
-                                  {adminGameView === 'reviewAnswers' && (
-                                    <ScrollView style={styles.reviewAnswersContainer}>
-                                      <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('adminGameKeyEntry')}> {/* NEW: Back to Game Key Entry */}
-                                        <Text style={styles.buttonText}>Back to Game Key Entry</Text>
-                                      </TouchableOpacity>
-                                      <Text style={styles.gameKeyText}>Submitted Answers for Review (Game Key: {gameKey})</Text> {/* NEW: Display gameKey */}
-                                      {submittedAnswers.length === 0 ? (
-                                        <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
-                                      ) : (
-                                        Object.entries(
-                                          submittedAnswers.reduce((acc, answer) => {
-                                            (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
-                                            return acc;
-                                          }, {})
-                                        ).map(([teamName, teamAnswers]) => (
-                                          <View key={teamName} style={styles.teamAnswersContainer}>
-                                            <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
-                                            {teamAnswers.map((answer, ansIndex) => (
-                                              <View key={ansIndex} style={styles.submittedAnswerItem}>
-                                                <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
-                                                {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
-                                                {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
-                                                <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
-                                                <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
-                                                {answer.status === 'pending' && (
-                                                  <View style={styles.reviewButtonsContainer}>
-                                                    <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
-                                                      <Text style={styles.buttonText}>Correct</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
-                                                      <Text style={styles.buttonText}>Incorrect</Text>
-                                                    </TouchableOpacity>
-                                                  </View>
-                                                )}
-                                              </View>
-                                            ))}
-                                          </View>
-                                        ))
-                                      )}
-                                    </ScrollView>
-                                  )}
-                                  {/* Add Save/Delete Game buttons here if needed, or keep them in adminGameKeyEntry */}
-                                    <View style={styles.buttonSpacing}>
-                                      <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                                        <Text style={styles.buttonText}>Save Game</Text>
-                                      </TouchableOpacity>
-                                    </View>
-                                    <View style={styles.buttonSpacing}>
-                                      <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                                        <Text style={styles.buttonText}>Delete Game</Text>
-                                      </TouchableOpacity>
-                                    </View>
-                                </View>
-                              ) : (                  <View>
-                    <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text> {/* NEW: Display teamName */}
-                    {selectedQuestion ? (
-                      // Clue Detail View
-                      <View style={styles.clueDetailContainer}>
-                        <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
-                        {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
-                        {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
+                  {adminGameView === 'reviewAnswers' && (
+                    <ScrollView style={styles.reviewAnswersContainer}>
+                      <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('adminGameKeyEntry')}>
+                        <Text style={styles.buttonText}>Back to Game Key Entry</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.gameKeyText}>Submitted Answers for Review (Game Key: {gameKey})</Text>
 
-                        {/* Answer Input */}
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Your text answer"
-                          value={playerTextAnswer}
-                          onChangeText={setPlayerTextAnswer}
-                        />
-                        <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
-                          <Text style={styles.buttonText}>Upload Photo</Text>
-                        </TouchableOpacity>
-                        {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+                      {selectedAnswerForReview ? (
+                        <View style={styles.detailedAnswerContainer}>
+                          <Text style={styles.clueDetailText}>Question: {selectedAnswerForReview.questionText}</Text>
+                          {selectedAnswerForReview.submittedTextAnswer && <Text style={styles.clueDetailText}>Submitted Text: {selectedAnswerForReview.submittedTextAnswer}</Text>}
+                          {selectedAnswerForReview.submittedImageUri && <Image source={{ uri: selectedAnswerForReview.submittedImageUri }} style={styles.clueImage} />}
+                          <Text style={styles.clueDetailText}>Answered by: {selectedAnswerForReview.playerName} from Team {selectedAnswerForReview.teamName}</Text>
+                          <Text style={styles.clueDetailText}>Submitted on: {new Date(selectedAnswerForReview.timestamp).toLocaleString()}</Text>
+                          <Text style={styles.clueDetailText}>Expected Answer: {selectedAnswerForReview.expectedAnswer}</Text>
 
-                        <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
-                          <Text style={styles.buttonText}>Submit Answer</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
-                          <Text style={styles.buttonText}>Back to Clues</Text>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Score"
+                            keyboardType="numeric"
+                            value={currentScore}
+                            onChangeText={setCurrentScore}
+                          />
+                          <View style={styles.buttonSpacing}>
+                            <TouchableOpacity style={styles.button} onPress={() => handleSaveScore(selectedAnswerForReview.id, currentScore)}>
+                              <Text style={styles.buttonText}>Save Score</Text>
+                            </TouchableOpacity>
+                          </View>
+                          <View style={styles.buttonSpacing}>
+                            <TouchableOpacity style={styles.button} onPress={() => setSelectedAnswerForReview(null)}>
+                              <Text style={styles.buttonText}>Back to All Answers</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ) : (
+                        submittedAnswers.length === 0 ? (
+                          <Text style={styles.gameKeyText}>No answers submitted yet.</Text>
+                        ) : (
+                          Object.entries(
+                            submittedAnswers.reduce((acc, answer) => {
+                              (acc[answer.teamName] = acc[answer.teamName] || []).push(answer);
+                              return acc;
+                            }, {})
+                          ).map(([teamName, teamAnswers]) => (
+                            <View key={teamName} style={styles.teamAnswersContainer}>
+                              <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
+                              {teamAnswers.map((answer, ansIndex) => (
+                                <TouchableOpacity key={ansIndex} style={styles.submittedAnswerItem} onPress={() => setSelectedAnswerForReview(answer)}>
+                                  <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                                  <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                                  {answer.score !== undefined && <Text style={styles.clueItemText}>Score: {answer.score}</Text>}
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          ))
+                        )
+                      )}
+                      {/* Add Save/Delete Game buttons here if needed, or keep them in adminGameKeyEntry */}
+                      <View style={styles.buttonSpacing}>
+                        <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
+                          <Text style={styles.buttonText}>Save Game</Text>
                         </TouchableOpacity>
                       </View>
-                    ) : (
+                      <View style={styles.buttonSpacing}>
+                        <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
+                          <Text style={styles.buttonText}>Delete Game</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </ScrollView>
+                  )}
+                                </View>
+                                                <View>
+                    <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text>
+                  <Text style={styles.gameKeyText}>Your Score: {playerScore} points</Text> {/* NEW: Display individual player score */} {/* NEW: Display teamName */}
+                    {selectedQuestion ? (
+                      // Clue Detail View
+                                          <View style={styles.clueDetailContainer}>
+                                            <Text style={styles.clueDetailText}>{selectedQuestion.questionText}</Text>
+                                            {selectedQuestion.imageUrl && <Image source={{ uri: selectedQuestion.imageUrl }} style={styles.clueImage} />}
+                                            {selectedQuestion.caption && <Text style={styles.clueCaption}>{selectedQuestion.caption}</Text>}
+                      
+                                            {/* Teammate Answers Display */}
+                                            {teamAnswers[selectedQuestion.id] && (
+                                              <View style={styles.teammateAnswerContainer}>
+                                                <Text style={styles.teammateAnswerTitle}>Teammate's Answer:</Text>
+                                                {teamAnswers[selectedQuestion.id].submittedTextAnswer && <Text style={styles.clueItemText}>Text: {teamAnswers[selectedQuestion.id].submittedTextAnswer}</Text>}
+                                                {teamAnswers[selectedQuestion.id].submittedImageUri && <Image source={{ uri: teamAnswers[selectedQuestion.id].submittedImageUri }} style={styles.uploadedImage} />}
+                                                <Text style={styles.clueItemText}>Answered by: {teamAnswers[selectedQuestion.id].playerName}</Text>
+                                                <Text style={styles.clueItemText}>Status: {teamAnswers[selectedQuestion.id].status || 'Pending'}</Text>
+                                                {teamAnswers[selectedQuestion.id].score !== undefined && <Text style={styles.clueItemText}>Score: {teamAnswers[selectedQuestion.id].score}</Text>}
+                                              </View>
+                                            )}
+                      
+                                            {/* Answer Input */}
+                                            <TextInput
+                                              style={styles.input}
+                                              placeholder="Your text answer"
+                                              value={playerTextAnswer}
+                                              onChangeText={setPlayerTextAnswer}
+                                            />
+                                            <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
+                                              <Text style={styles.buttonText}>Upload Photo</Text>
+                                            </TouchableOpacity>
+                                            {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+                      
+                                            <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
+                                              <Text style={styles.buttonText}>Submit Answer</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
+                                              <Text style={styles.buttonText}>Back to Clues</Text>
+                                            </TouchableOpacity>
+                                          </View>                    ) : (
                       // Category and Clue List
                       <ScrollView style={styles.clueListContainer}>
                         {Object.entries(
@@ -835,21 +898,28 @@ export default function App() {
                           <View key={category} style={styles.categoryContainer}>
                             <Text style={styles.categoryTitle}>{category || 'Uncategorized'}</Text>
                             {categoryQuestions.map((question, qIndex) => (
-                              <TouchableOpacity
-                                key={qIndex}
-                                style={styles.clueItem}
-                                onPress={() => setSelectedQuestion(question)}
-                              >
-                                <Text style={styles.clueItemText}>{question.questionText}</Text>
-                                {/* Add an icon or indicator if answered */}
-                              </TouchableOpacity>
-                            ))}
+                                                        <TouchableOpacity
+                                                          key={qIndex}
+                                                          style={[styles.clueItem, teamAnswers[question.id] && styles.clueItemAnswered]} // NEW: Add answered style
+                                                          onPress={() => setSelectedQuestion(question)}
+                                                        >
+                                                          <Text style={styles.clueItemText}>{question.questionText}</Text>
+                                                          {teamAnswers[question.id] && <Text style={styles.clueAnsweredIndicator}> (Answered by Teammate)</Text>} {/* NEW: Answered indicator */}
+                                                        </TouchableOpacity>                            ))}
                           </View>
                         ))}
                       </ScrollView>
                     )}
-                  </View>
-                )}
+                  {/* Team Scores Display */}
+                  <Text style={styles.gameKeyText}>Team Scores:</Text>
+                  {Object.keys(teamScores).length === 0 ? (
+                    <Text style={styles.gameKeyText}>Scores not available yet.</Text>
+                  ) : (
+                    Object.entries(teamScores).map(([team, score]) => (
+                      <Text key={team} style={styles.gameKeyText}>- {team}: {score} points</Text>
+                    ))
+                  )}
+                </View>
                 {/* Players in Game display */}
                 <Text style={styles.gameKeyText}>Players in Game:</Text>
                 {playersInGame.length === 0 ? (
@@ -907,6 +977,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_500Medium',
     textAlign: 'center',
   },
+  clueItemAnswered: {
+    backgroundColor: '#5a8a6d', // Slightly darker green for answered clues
+  },
+  clueAnsweredIndicator: {
+    color: '#c0c0c0',
+    fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
+    marginTop: 5,
+  },
   clueDetailContainer: {
     flex: 1,
     width: '100%',
@@ -934,6 +1013,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Manrope_400Regular',
   },
+  teammateAnswerContainer: {
+    backgroundColor: '#3a7f81', // Slightly different background for teammate answer
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    width: '100%',
+    alignItems: 'center',
+  },
+  teammateAnswerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ececec',
+    marginBottom: 5,
+    fontFamily: 'Manrope_700Bold',
+  },
   reviewAnswersContainer: {
     flex: 1,
     width: '100%',
@@ -958,6 +1052,14 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
+  },
+  detailedAnswerContainer: {
+    backgroundColor: '#2a6f91',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
   },
   reviewButtonsContainer: {
     flexDirection: 'row',
