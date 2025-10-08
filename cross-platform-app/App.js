@@ -933,18 +933,23 @@ export default function App() {
                           value={playerTextAnswer}
                           onChangeText={setPlayerTextAnswer}
                         />
-                        <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
-                          <Text style={styles.buttonText}>Upload Photo</Text>
-                        </TouchableOpacity>
-                        {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
-
-                        <TouchableOpacity style={styles.gameButton} onPress={handleSubmitAnswer}>
-                          <Text style={styles.gameButtonText}>Submit Answer</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.gameButton} onPress={() => setSelectedQuestion(null)}>
-                          <Text style={styles.gameButtonText}>Back to Clues</Text>
-                        </TouchableOpacity>
-                      </View>
+                                                <View style={styles.buttonSpacing}>
+                                                  <TouchableOpacity style={styles.button} onPress={handlePlayerImagePick}>
+                                                    <Text style={styles.buttonText}>Upload Photo</Text>
+                                                  </TouchableOpacity>
+                                                </View>
+                                                {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
+                        
+                                                <View style={styles.buttonSpacing}>
+                                                  <TouchableOpacity style={styles.gameButton} onPress={handleSubmitAnswer}>
+                                                    <Text style={styles.gameButtonText}>Submit Answer</Text>
+                                                  </TouchableOpacity>
+                                                </View>
+                                                <View style={styles.buttonSpacing}>
+                                                  <TouchableOpacity style={styles.gameButton} onPress={() => setSelectedQuestion(null)}>
+                                                    <Text style={styles.gameButtonText}>Back to Clues</Text>
+                                                  </TouchableOpacity>
+                                                </View>                      </View>
                     ) : (
                       // Category and Clue List
                       <ScrollView style={styles.clueListContainer}>
