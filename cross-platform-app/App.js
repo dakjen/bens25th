@@ -14,57 +14,33 @@ SplashScreen.preventAutoHideAsync();
 const SOCKET_SERVER_URL = 'https://bens25th.onrender.com'; // Replace with your backend server URL
 
 const DUMMY_SUBMITTED_ANSWERS = [
+  // ... existing dummy answers
+];
+
+const DUMMY_PLAYER_QUESTIONS = [
   {
-    id: 'ans1',
-    gameKey: 'DEMO',
-    playerName: 'Player1',
-    teamName: 'Team Alpha',
-    questionId: 'q1',
-    questionText: 'What is the capital of France?',
-    submittedTextAnswer: 'Paris',
-    submittedImageUri: null,
-    expectedAnswer: 'Paris',
-    status: 'pending',
-    score: 0,
+    id: 'pq1',
+    questionText: 'What is the capital of Australia?',
+    imageUrl: null,
+    caption: '',
+    category: 'Geography',
+    expectedAnswer: 'Canberra',
   },
   {
-    id: 'ans2',
-    gameKey: 'DEMO',
-    playerName: 'Player2',
-    teamName: 'Team Alpha',
-    questionId: 'q2',
-    questionText: 'Upload a picture of a cat.',
-    submittedTextAnswer: null,
-    submittedImageUri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/1200px-Cat_November_2010-1a.jpg',
-    expectedAnswer: 'A cat picture',
-    status: 'pending',
-    score: 0,
+    id: 'pq2',
+    questionText: 'Who wrote 'Hamlet'?',
+    imageUrl: null,
+    caption: '',
+    category: 'Literature',
+    expectedAnswer: 'William Shakespeare',
   },
   {
-    id: 'ans3',
-    gameKey: 'DEMO',
-    playerName: 'Player3',
-    teamName: 'Team Beta',
-    questionId: 'q1',
-    questionText: 'What is the capital of France?',
-    submittedTextAnswer: 'London',
-    submittedImageUri: null,
-    expectedAnswer: 'Paris',
-    status: 'incorrect',
-    score: 0,
-  },
-  {
-    id: 'ans4',
-    gameKey: 'DEMO',
-    playerName: 'Player4',
-    teamName: 'Team Beta',
-    questionId: 'q3',
-    questionText: 'Who painted the Mona Lisa?',
-    submittedTextAnswer: 'Leonardo da Vinci',
-    submittedImageUri: null,
-    expectedAnswer: 'Leonardo da Vinci',
-    status: 'correct',
-    score: 5,
+    id: 'pq3',
+    questionText: 'Upload a picture of a famous landmark.',
+    imageUrl: null,
+    caption: '',
+    category: 'Photography',
+    expectedAnswer: 'Any famous landmark',
   },
 ];
 
@@ -464,6 +440,20 @@ export default function App() {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Who are you?, Team Name, Rejoin Code).');
       return;
     }
+
+    if (gameKey === 'PLAYERDEMO' && teamName === 'DemoTeam') {
+      setGameKey(gameKey);
+      setPlayerName(playerName);
+      setTeamName(teamName);
+      setCurrentScreen('game');
+      setIsAdmin(false);
+      setQuestions(DUMMY_PLAYER_QUESTIONS);
+      setTeamAnswers({}); // No dummy team answers for player demo
+      setPlayerScore(100); // Dummy score
+      Alert.alert('Demo Mode', `Welcome to player demo, ${playerName} of Team ${teamName}!`);
+      return;
+    }
+
     if (socket) {
       socket.emit('joinGame', { gameKey, playerName, rejoinCode, teamName }, ({ success, message }) => {
         if (success) {
@@ -482,6 +472,20 @@ export default function App() {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
       return;
     }
+
+    if (gameKey === 'PLAYERDEMO' && teamName === 'DemoTeam') {
+      setGameKey(gameKey);
+      setPlayerName('DemoPlayer'); // A generic name for demo rejoin
+      setTeamName(teamName);
+      setCurrentScreen('game');
+      setIsAdmin(false);
+      setQuestions(DUMMY_PLAYER_QUESTIONS);
+      setTeamAnswers({}); // No dummy team answers for player demo
+      setPlayerScore(100); // Dummy score
+      Alert.alert('Demo Mode', `Welcome back to player demo, DemoPlayer of Team ${teamName}!`);
+      return;
+    }
+
     if (socket) {
       socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
         if (success) {
