@@ -837,18 +837,18 @@ export default function App() {
                       <View>
                         <Text style={styles.gameKeyText}>You are the Admin</Text>
                         <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={handleSaveGame}>
-                            <Text style={styles.buttonText}>Save Game</Text>
+                          <TouchableOpacity style={styles.gameButton} onPress={handleSaveGame}>
+                            <Text style={styles.gameButtonText}>Save Game</Text>
                           </TouchableOpacity>
                         </View>
                         <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={handleDeleteGame}>
-                            <Text style={styles.buttonText}>Delete Game</Text>
+                          <TouchableOpacity style={styles.gameButton} onPress={handleDeleteGame}>
+                            <Text style={styles.gameButtonText}>Delete Game</Text>
                           </TouchableOpacity>
                         </View>
                         <View style={styles.buttonSpacing}>
-                          <TouchableOpacity style={styles.button} onPress={() => setAdminGameView('reviewAnswers')}>
-                            <Text style={styles.buttonText}>Review Answers</Text>
+                          <TouchableOpacity style={styles.gameButton} onPress={() => setAdminGameView('reviewAnswers')}>
+                            <Text style={styles.gameButtonText}>Review Answers</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -856,8 +856,8 @@ export default function App() {
 
                     {adminGameView === 'reviewAnswers' && (
                       <ScrollView style={styles.reviewAnswersContainer}>
-                        <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('adminGameKeyEntry')}>
-                          <Text style={styles.buttonText}>Back to Game Key Entry</Text>
+                        <TouchableOpacity style={styles.gameButton} onPress={() => setCurrentScreen('adminGameKeyEntry')}>
+                          <Text style={styles.gameButtonText}>Back to Game Key Entry</Text>
                         </TouchableOpacity>
                         <Text style={styles.gameKeyText}>Submitted Answers for Review (Game Key: {gameKey})</Text>
                         {submittedAnswers.length === 0 ? (
@@ -901,8 +901,8 @@ export default function App() {
                                         keyboardType="numeric"
                                       />
                                       <View style={styles.buttonSpacing}>
-                                        <TouchableOpacity style={styles.button} onPress={() => handleSaveScore(answer.id, currentScore)}>
-                                          <Text style={styles.buttonText}>Save Score</Text>
+                                        <TouchableOpacity style={styles.gameButton} onPress={() => handleSaveScore(answer.id, currentScore)}>
+                                          <Text style={styles.gameButtonText}>Save Score</Text>
                                         </TouchableOpacity>
                                       </View>
                                     </View>
@@ -938,11 +938,11 @@ export default function App() {
                         </TouchableOpacity>
                         {playerImageUri && <Image source={{ uri: playerImageUri }} style={styles.uploadedImage} />}
 
-                        <TouchableOpacity style={styles.button} onPress={handleSubmitAnswer}>
-                          <Text style={styles.buttonText}>Submit Answer</Text>
+                        <TouchableOpacity style={styles.gameButton} onPress={handleSubmitAnswer}>
+                          <Text style={styles.gameButtonText}>Submit Answer</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button} onPress={() => setSelectedQuestion(null)}>
-                          <Text style={styles.buttonText}>Back to Clues</Text>
+                        <TouchableOpacity style={styles.gameButton} onPress={() => setSelectedQuestion(null)}>
+                          <Text style={styles.gameButtonText}>Back to Clues</Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
@@ -997,6 +997,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 20,
+    backgroundColor: '#303030', // Game screen specific background
   },
   clueListContainer: {
     flex: 1,
@@ -1206,6 +1207,22 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ececec',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontFamily: 'Manrope_700Bold',
+  },
+  gameButton: {
+    backgroundColor: '#14538e', // Blue button background
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 200,
+  },
+  gameButtonText: {
+    color: '#6f9a7d', // Green button text
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
