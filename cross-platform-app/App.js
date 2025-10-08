@@ -13,6 +13,61 @@ SplashScreen.preventAutoHideAsync();
 
 const SOCKET_SERVER_URL = 'https://bens25th.onrender.com'; // Replace with your backend server URL
 
+const DUMMY_SUBMITTED_ANSWERS = [
+  {
+    id: 'ans1',
+    gameKey: 'DEMO',
+    playerName: 'Player1',
+    teamName: 'Team Alpha',
+    questionId: 'q1',
+    questionText: 'What is the capital of France?',
+    submittedTextAnswer: 'Paris',
+    submittedImageUri: null,
+    expectedAnswer: 'Paris',
+    status: 'pending',
+    score: 0,
+  },
+  {
+    id: 'ans2',
+    gameKey: 'DEMO',
+    playerName: 'Player2',
+    teamName: 'Team Alpha',
+    questionId: 'q2',
+    questionText: 'Upload a picture of a cat.',
+    submittedTextAnswer: null,
+    submittedImageUri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/1200px-Cat_November_2010-1a.jpg',
+    expectedAnswer: 'A cat picture',
+    status: 'pending',
+    score: 0,
+  },
+  {
+    id: 'ans3',
+    gameKey: 'DEMO',
+    playerName: 'Player3',
+    teamName: 'Team Beta',
+    questionId: 'q1',
+    questionText: 'What is the capital of France?',
+    submittedTextAnswer: 'London',
+    submittedImageUri: null,
+    expectedAnswer: 'Paris',
+    status: 'incorrect',
+    score: 0,
+  },
+  {
+    id: 'ans4',
+    gameKey: 'DEMO',
+    playerName: 'Player4',
+    teamName: 'Team Beta',
+    questionId: 'q3',
+    questionText: 'Who painted the Mona Lisa?',
+    submittedTextAnswer: 'Leonardo da Vinci',
+    submittedImageUri: null,
+    expectedAnswer: 'Leonardo da Vinci',
+    status: 'correct',
+    score: 5,
+  },
+];
+
 export default function App() {
   const [socket, setSocket] = useState(null);
   const [gameKey, setGameKey] = useState('');
@@ -329,13 +384,19 @@ export default function App() {
 
   const handleProceedToAdminReview = () => {
     if (adminEnteredGameKey) {
-      // In a real app, you'd validate this game key with the backend
-      // For now, we'll just assume it's valid and proceed
       setGameKey(adminEnteredGameKey); // Set the game key for the admin session
       setCurrentScreen('game'); // Transition to the game screen
       setIsAdmin(true); // Set admin status
       setAdminGameView('reviewAnswers'); // Go directly to review answers
       setAdminEnteredGameKey(''); // Clear the input
+
+      if (adminEnteredGameKey === 'DEMO') {
+        setSubmittedAnswers(DUMMY_SUBMITTED_ANSWERS);
+      } else {
+        // In a real app, you'd fetch submitted answers for the gameKey from the backend
+        // For now, it will remain empty unless a real game is active and emits updates
+        setSubmittedAnswers([]);
+      }
     } else {
       Alert.alert('Error', 'Please enter a Game Key.');
     }
