@@ -796,23 +796,42 @@ export default function App() {
                             <View key={teamName} style={styles.teamAnswersContainer}>
                               <Text style={styles.teamNameTitle}>Team: {teamName}</Text>
                               {teamAnswers.map((answer, ansIndex) => (
-                                <TouchableOpacity key={ansIndex} style={styles.submittedAnswerItem} onPress={() => setSelectedAnswerForReview(answer)}>
-                                  <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
-                                  {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
-                                  {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
-                                  <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
-                                  <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
-                                  {answer.status === 'pending' && (
-                                    <View style={styles.reviewButtonsContainer}>
-                                      <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
-                                        <Text style={styles.buttonText}>Correct</Text>
-                                      </TouchableOpacity>
-                                      <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
-                                        <Text style={styles.buttonText}>Incorrect</Text>
-                                      </TouchableOpacity>
+                                <View key={ansIndex} style={styles.submittedAnswerItem}>
+                                  <TouchableOpacity onPress={() => setSelectedAnswerForReview(selectedAnswerForReview === answer ? null : answer)}>
+                                    <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                                    {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
+                                    {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
+                                    <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
+                                    <Text style={styles.clueItemText}>Status: {answer.status || 'Pending'}</Text>
+                                  </TouchableOpacity>
+
+                                  {selectedAnswerForReview === answer && (
+                                    <View style={styles.detailedAnswerInlineContainer}>
+                                      {answer.status === 'pending' && (
+                                        <View style={styles.reviewButtonsContainer}>
+                                          <TouchableOpacity style={styles.reviewButtonCorrect} onPress={() => handleReviewAnswer(answer.id, 'correct')}>
+                                            <Text style={styles.buttonText}>Mark Correct</Text>
+                                          </TouchableOpacity>
+                                          <TouchableOpacity style={styles.reviewButtonIncorrect} onPress={() => handleReviewAnswer(answer.id, 'incorrect')}>
+                                            <Text style={styles.buttonText}>Mark Incorrect</Text>
+                                          </TouchableOpacity>
+                                        </View>
+                                      )}
+                                      <TextInput
+                                        style={styles.input}
+                                        placeholder="Score"
+                                        value={currentScore}
+                                        onChangeText={setCurrentScore}
+                                        keyboardType="numeric"
+                                      />
+                                      <View style={styles.buttonSpacing}>
+                                        <TouchableOpacity style={styles.button} onPress={() => handleSaveScore(answer.id, currentScore)}>
+                                          <Text style={styles.buttonText}>Save Score</Text>
+                                        </TouchableOpacity>
+                                      </View>
                                     </View>
                                   )}
-                                </TouchableOpacity>
+                                </View>
                               ))}
                             </View>
                           ))
@@ -1011,12 +1030,13 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  teammateAnswerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ececec',
-    marginBottom: 5,
-    fontFamily: 'Manrope_700Bold',
+  detailedAnswerInlineContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#555',
+    width: '100%',
+    alignItems: 'center',
   },
   reviewButtonsContainer: {
     flexDirection: 'row',
