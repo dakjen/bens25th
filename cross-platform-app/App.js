@@ -436,31 +436,39 @@ export default function App() {
   };
 
   const handleJoinGame = () => {
+    console.log('handleJoinGame called');
+    console.log('gameKey:', gameKey, 'playerName:', playerName, 'rejoinCode:', rejoinCode, 'teamName:', teamName);
+
     if (!gameKey || !playerName || !rejoinCode || !teamName) {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Who are you?, Team Name, Rejoin Code).');
+      console.log('Missing fields');
       return;
     }
 
-    if (gameKey === 'PLAYERDEMO' && teamName === 'DemoTeam') {
+    if (gameKey === 'PLAYDM' && teamName === 'DemoTeam') {
+      console.log('Player demo condition met');
       setGameKey(gameKey);
       setPlayerName(playerName);
       setTeamName(teamName);
       setCurrentScreen('game');
       setIsAdmin(false);
       setQuestions(DUMMY_PLAYER_QUESTIONS);
-      setTeamAnswers({}); // No dummy team answers for player demo
+      setTeamAnswers({});
       setPlayerScore(100); // Dummy score
       Alert.alert('Demo Mode', `Welcome to player demo, ${playerName} of Team ${teamName}!`);
       return;
     }
 
     if (socket) {
+      console.log('Emitting joinGame event');
       socket.emit('joinGame', { gameKey, playerName, rejoinCode, teamName }, ({ success, message }) => {
         if (success) {
+          console.log('joinGame success');
           setCurrentScreen('game');
           setIsAdmin(false);
           Alert.alert('Joined Game', `Welcome, ${playerName} of Team ${teamName}!`);
         } else {
+          console.log('joinGame failed:', message);
           Alert.alert('Error', message || 'Failed to join game');
         }
       });
@@ -473,7 +481,7 @@ export default function App() {
       return;
     }
 
-    if (gameKey === 'PLAYERDEMO' && teamName === 'DemoTeam') {
+    if (gameKey === 'PLAYDM' && teamName === 'DemoTeam') {
       setGameKey(gameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
       setTeamName(teamName);
@@ -784,6 +792,7 @@ export default function App() {
                 value={gameKey}
                 onChangeText={setGameKey}
                 autoCapitalize="characters"
+                maxLength={6}
               />
               <TextInput
                 style={styles.input}
