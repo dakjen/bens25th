@@ -28,7 +28,7 @@ const DUMMY_PLAYER_QUESTIONS = [
   },
   {
     id: 'pq2',
-    questionText: 'Who wrote 'Hamlet'?',
+    questionText: "Who wrote 'Hamlet'?",
     imageUrl: null,
     caption: '',
     category: 'Literature',
