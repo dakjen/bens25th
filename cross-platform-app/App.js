@@ -1139,7 +1139,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#155591',
+    backgroundColor: '#303030',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -1196,7 +1196,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   button: {
-    backgroundColor: '#6f9a7d',
+    backgroundColor: '#14538e',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
     width: 200,
   },
   buttonText: {
-    color: '#ececec',
+    color: '#6f9a7d',
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
