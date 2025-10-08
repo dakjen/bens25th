@@ -979,6 +979,23 @@ export default function App() {
                   <View>
                     <Text style={styles.gameKeyText}>Playing as: {playerName} of Team {teamName}</Text>
                     <Text style={styles.gameKeyText}>Your Score: {playerScore} points</Text>
+                    <View style={styles.buttonSpacing}>
+                      <TouchableOpacity style={styles.gameButton} onPress={() => {
+                        setCurrentScreen('home');
+                        setGameKey('');
+                        setPlayerName('');
+                        setRejoinCode('');
+                        setTeamName('');
+                        setIsAdmin(false);
+                        setQuestions([]);
+                        setPlayerScore(0);
+                        setTeamAnswers({});
+                        // Optionally emit a 'leaveGame' event to the backend
+                        // if (socket) socket.emit('leaveGame', { gameKey, playerName, teamName });
+                      }}>
+                        <Text style={styles.gameButtonText}>Leave Game</Text>
+                      </TouchableOpacity>
+                    </View>
                     {selectedQuestion ? (
                       // Clue Detail View
                       <View style={styles.clueDetailContainer}>
@@ -1343,5 +1360,16 @@ const styles = StyleSheet.create({
     color: '#ececec',
     marginBottom: 20,
     textAlign: 'center',
-  }
-});
+  },
+  homeLinkButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 10,
+    padding: 10,
+  },
+  homeLinkText: {
+    color: '#ececec', // Light color for visibility
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
