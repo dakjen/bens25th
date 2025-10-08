@@ -208,12 +208,18 @@ export default function App() {
   };
 
   const handleSubmitAnswer = () => {
+    console.log('handleSubmitAnswer called');
+    console.log('playerTextAnswer:', playerTextAnswer, 'playerImageUri:', playerImageUri);
+    console.log('socket:', !!socket, 'selectedQuestion:', !!selectedQuestion);
+
     if (!playerTextAnswer && !playerImageUri) {
       Alert.alert('Error', 'Please provide either a text answer or upload a photo.');
+      console.log('Error: No text or image provided.');
       return;
     }
 
     if (socket && selectedQuestion) {
+      console.log('Emitting submitAnswer event');
       socket.emit('submitAnswer', {
         gameKey,
         playerName,
@@ -222,6 +228,7 @@ export default function App() {
         submittedTextAnswer: playerTextAnswer,
         submittedImageUri: playerImageUri,
       }, ({ success, message }) => {
+        console.log('submitAnswer callback received. Success:', success, 'Message:', message);
         if (success) {
           Alert.alert('Success', 'Answer submitted for review!');
           setPlayerTextAnswer('');
@@ -232,6 +239,8 @@ export default function App() {
           Alert.alert('Error', message || 'Failed to submit answer.');
         }
       });
+    } else {
+      console.log('Error: Socket not connected or no question selected.');
     }
   };
 
