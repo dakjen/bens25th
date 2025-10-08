@@ -319,7 +319,7 @@ export default function App() {
 
   const handleAdminLogin = () => {
     if (adminPassword === 'bensbdayadmin') { // Replace with actual password logic
-      setCurrentScreen('admin');
+      setCurrentScreen('adminGameKeyEntry'); // Navigate to game key entry for review
       setShowAdminLogin(false);
       setAdminPassword('');
     } else {
