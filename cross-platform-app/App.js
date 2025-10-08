@@ -318,7 +318,7 @@ export default function App() {
   };
 
   const handleAdminLogin = () => {
-    if (adminPassword === 'your_admin_password') { // Replace with actual password logic
+    if (adminPassword === 'bensbdayadmin') { // Replace with actual password logic
       setCurrentScreen('admin');
       setShowAdminLogin(false);
       setAdminPassword('');
