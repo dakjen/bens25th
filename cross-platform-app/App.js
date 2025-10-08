@@ -784,7 +784,6 @@ export default function App() {
                 value={gameKey}
                 onChangeText={setGameKey}
                 autoCapitalize="characters"
-                maxLength={6}
               />
               <TextInput
                 style={styles.input}
