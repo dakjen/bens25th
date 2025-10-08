@@ -445,7 +445,7 @@ export default function App() {
       return;
     }
 
-    if (gameKey === 'PLAYDM' && teamName === 'DemoTeam') {
+    if (gameKey === 'PLAYDM') {
       console.log('Player demo condition met');
       setGameKey(gameKey);
       setPlayerName(playerName);
@@ -481,7 +481,7 @@ export default function App() {
       return;
     }
 
-    if (gameKey === 'PLAYDM' && teamName === 'DemoTeam') {
+    if (gameKey === 'PLAYDM') {
       setGameKey(gameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
       setTeamName(teamName);
