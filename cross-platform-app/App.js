@@ -529,12 +529,17 @@ export default function App() {
   };
 
   const handleRejoinGame = () => {
+    console.log('handleRejoinGame called');
+    console.log('gameKey:', gameKey, 'rejoinCode:', rejoinCode, 'teamName:', teamName);
+
     if (!gameKey || !rejoinCode || !teamName) {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
+      console.log('Missing fields');
       return;
     }
 
-    if (gameKey === 'PLAYDM') {
+    if (gameKey === 'PLAYDM') { // Player demo condition
+      console.log('Player demo rejoin condition met');
       setGameKey(gameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
       setTeamName(teamName);
@@ -548,7 +553,9 @@ export default function App() {
     }
 
     if (socket) {
+      console.log('Emitting rejoinGame event');
       socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
+        console.log('rejoinGame callback received. Success:', success, 'Message:', message);
         if (success) {
           setPlayerName(rejoinedPlayerName || 'Player'); // Set player name if rejoined
           setCurrentScreen('game');
