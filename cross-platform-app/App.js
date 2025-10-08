@@ -819,7 +819,7 @@ export default function App() {
                                       )}
                                       <TextInput
                                         style={styles.input}
-                                        placeholder="Score"
+                                        placeholder="Score 1-5"
                                         value={currentScore}
                                         onChangeText={setCurrentScore}
                                         keyboardType="numeric"
