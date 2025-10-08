@@ -5,8 +5,8 @@ import io from 'socket.io-client';
 import { useFonts } from 'expo-font';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
-import * as SplashScreen from 'expo-splash-screen';
-import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
+import *n as SplashScreen from 'expo-splash-screen';
+import *n as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -47,6 +47,8 @@ export default function App() {
   const [teamScores, setTeamScores] = useState({}); // NEW
   const [playerScore, setPlayerScore] = useState(0); // NEW
   const [teamAnswers, setTeamAnswers] = useState({}); // NEW
+  const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
+  const [adminPassword, setAdminPassword] = useState(''); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -313,6 +315,30 @@ export default function App() {
     setCurrentCaption('');
     setCurrentCategory('');
     setExpectedAnswer('');
+  };
+
+  const handleAdminLogin = () => {
+    if (adminPassword === 'your_admin_password') { // Replace with actual password logic
+      setCurrentScreen('admin');
+      setShowAdminLogin(false);
+      setAdminPassword('');
+    } else {
+      Alert.alert('Error', 'Incorrect Admin Password');
+    }
+  };
+
+  const handleProceedToAdminReview = () => {
+    if (adminEnteredGameKey) {
+      // In a real app, you'd validate this game key with the backend
+      // For now, we'll just assume it's valid and proceed
+      setGameKey(adminEnteredGameKey); // Set the game key for the admin session
+      setCurrentScreen('game'); // Transition to the game screen
+      setIsAdmin(true); // Set admin status
+      setAdminGameView('reviewAnswers'); // Go directly to review answers
+      setAdminEnteredGameKey(''); // Clear the input
+    } else {
+      Alert.alert('Error', 'Please enter a Game Key.');
+    }
   };
 
   const handleFinishGameSetup = () => {
