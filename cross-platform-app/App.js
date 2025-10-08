@@ -6,7 +6,8 @@ import { useFonts } from 'expo-font';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
 import * as SplashScreen from 'expo-splash-screen';
-import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
+import *n as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -155,6 +156,49 @@ export default function App() {
 
     return () => newSocket.disconnect();
   }, []);
+
+  // Load state from AsyncStorage on mount
+  useEffect(() => {
+    const loadState = async () => {
+      try {
+        const savedGameKey = await AsyncStorage.getItem('gameKey');
+        const savedPlayerName = await AsyncStorage.getItem('playerName');
+        const savedRejoinCode = await AsyncStorage.getItem('rejoinCode');
+        const savedTeamName = await AsyncStorage.getItem('teamName');
+        const savedCurrentScreen = await AsyncStorage.getItem('currentScreen');
+        const savedIsAdmin = await AsyncStorage.getItem('isAdmin');
+
+        if (savedGameKey) setGameKey(savedGameKey);
+        if (savedPlayerName) setPlayerName(savedPlayerName);
+        if (savedRejoinCode) setRejoinCode(savedRejoinCode);
+        if (savedTeamName) setTeamName(savedTeamName);
+        if (savedCurrentScreen) setCurrentScreen(savedCurrentScreen);
+        if (savedIsAdmin !== null) setIsAdmin(JSON.parse(savedIsAdmin)); // isAdmin is boolean
+      } catch (error) {
+        console.error('Failed to load state from AsyncStorage', error);
+      }
+    };
+
+    loadState();
+  }, []); // Run once on mount
+
+  // Save state to AsyncStorage whenever relevant states change
+  useEffect(() => {
+    const saveState = async () => {
+      try {
+        await AsyncStorage.setItem('gameKey', gameKey);
+        await AsyncStorage.setItem('playerName', playerName);
+        await AsyncStorage.setItem('rejoinCode', rejoinCode);
+        await AsyncStorage.setItem('teamName', teamName);
+        await AsyncStorage.setItem('currentScreen', currentScreen);
+        await AsyncStorage.setItem('isAdmin', JSON.stringify(isAdmin));
+      } catch (error) {
+        console.error('Failed to save state to AsyncStorage', error);
+      }
+    };
+
+    saveState();
+  }, [gameKey, playerName, rejoinCode, teamName, currentScreen, isAdmin]); // Run when these states change
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
