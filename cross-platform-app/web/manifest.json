@@ -7,14 +7,14 @@
   "theme_color": "#14538e",
   "icons": [
     {
-      "src": "/assets/oldben.jpg",
+      "src": "/assets/oldben.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "/assets/oldben.jpg",
+      "src": "/assets/oldben.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ]
 }
