@@ -350,25 +350,6 @@ export default function App() {
     }
   };
 
-  const handleAddQuestion = () => {
-    if (currentQuestionText) {
-      setQuestions(prev => [...prev, {
-        questionText: currentQuestionText,
-        imageUrl: currentImageUrl,
-        caption: currentCaption,
-        category: currentCategory,
-        expectedAnswer: expectedAnswer
-      }]);
-      setCurrentQuestionText('');
-      setCurrentImageUrl(null);
-      setCurrentCaption('');
-      setCurrentCategory('');
-      setExpectedAnswer('');
-    } else {
-      Alert.alert('Error', 'Please enter a question.');
-    }
-  };
-
   const handleParseAndAddQuestions = () => {
     if (bulkQuestionText) {
       const parsedQuestions = bulkQuestionText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
