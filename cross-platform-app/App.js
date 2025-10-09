@@ -501,7 +501,7 @@ export default function App() {
       return;
     }
 
-    if (gameKey === 'PLAYDM') {
+    if (gameKey.toUpperCase() === 'PLAYDM') {
       console.log('Player demo condition met');
       setGameKey(gameKey);
       setPlayerName(playerName);
@@ -541,7 +541,7 @@ export default function App() {
       return;
     }
 
-    if (modalGameKey === 'PLAYDM') { // Player demo condition
+    if (modalGameKey.toUpperCase() === 'PLAYDM') { // Player demo condition
       console.log('Player demo rejoin condition met');
       setGameKey(modalGameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
