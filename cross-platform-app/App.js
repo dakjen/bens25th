@@ -79,6 +79,8 @@ export default function App() {
   const [teamScores, setTeamScores] = useState({}); // NEW
   const [playerScore, setPlayerScore] = useState(0); // NEW
   const [teamAnswers, setTeamAnswers] = useState({}); // NEW
+  const [categories, setCategories] = useState([]); // NEW: To store unique categories
+  const [newCategoryText, setNewCategoryText] = useState(''); // NEW: For adding new categories
   const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
   const [adminPassword, setAdminPassword] = useState(''); // NEW
   const [showRejoinModal, setShowRejoinModal] = useState(false); // NEW
@@ -229,6 +231,7 @@ export default function App() {
   };
 
   const handleImagePick = async () => {
+    console.log('handleImagePick called');
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -236,8 +239,35 @@ export default function App() {
       quality: 1,
     });
 
+    console.log('ImagePicker result:', result);
+
     if (!result.canceled) {
       setCurrentImageUrl(result.assets[0].uri);
+      console.log('currentImageUrl set to:', result.assets[0].uri);
+    }
+  };
+
+  const handleAddQuestion = () => {
+    console.log('handleAddQuestion called');
+    console.log('currentQuestionText:', currentQuestionText, 'currentImageUrl:', currentImageUrl, 'currentCaption:', currentCaption, 'currentCategory:', currentCategory, 'expectedAnswer:', expectedAnswer);
+
+    if (currentQuestionText) {
+      setQuestions(prev => [...prev, {
+        questionText: currentQuestionText,
+        imageUrl: currentImageUrl,
+        caption: currentCaption,
+        category: currentCategory,
+        expectedAnswer: expectedAnswer
+      }]);
+      console.log('Question added. currentImageUrl was:', currentImageUrl);
+      setCurrentQuestionText('');
+      setCurrentImageUrl(null);
+      setCurrentCaption('');
+      setCurrentCategory('');
+      setExpectedAnswer('');
+    } else {
+      Alert.alert('Error', 'Please enter a question.');
+      console.log('Error: No question text provided.');
     }
   };
 
