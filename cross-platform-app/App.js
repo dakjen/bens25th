@@ -607,7 +607,7 @@ export default function App() {
                 maxLength={4}
               />
               <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={() => handleRejoinGame(modalGameKey, modalRejoinCode, modalTeamName)}>
+                <TouchableOpacity style={styles.button} onPress={() => handleRejoinGame(modalGameKey, modalRejoinCode)}>
                   <Text style={styles.buttonText}>Rejoin</Text>
                 </TouchableOpacity>
               </View>
