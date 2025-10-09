@@ -763,54 +763,63 @@ export default function App() {
                 </TouchableOpacity>
               </View>
               <Text style={styles.gameKeyText}>Add Questions</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Question Text"
-                value={currentQuestionText}
-                onChangeText={setCurrentQuestionText}
-              />
-              <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleImagePick}>
-                  <Text style={styles.buttonText}>Upload Photo</Text>
-                </TouchableOpacity>
-              </View>
-              {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
-              <TextInput
-                style={styles.input}
-                placeholder="Caption (optional)"
-                value={currentCaption}
-                onChangeText={setCurrentCaption}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Category (e.g., 'History', 'Science')"
-                value={currentCategory}
-                onChangeText={setCurrentCategory}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Expected Answer (for admin review)"
-                value={expectedAnswer}
-                onChangeText={setExpectedAnswer}
-              />
-              <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
-                  <Text style={styles.buttonText}>Add Question</Text>
-                </TouchableOpacity>
+
+              {/* Regular/Photo Question Section */}
+              <View style={styles.questionSectionContainer}>
+                <Text style={styles.gameKeyText}>Single Question</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Question Text"
+                  value={currentQuestionText}
+                  onChangeText={setCurrentQuestionText}
+                />
+                <View style={styles.buttonSpacing}>
+                  <TouchableOpacity style={styles.button} onPress={handleImagePick}>
+                    <Text style={styles.buttonText}>Upload Photo</Text>
+                  </TouchableOpacity>
+                </View>
+                {currentImageUrl && <Image source={{ uri: currentImageUrl }} style={styles.uploadedImage} />}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Caption (optional)"
+                  value={currentCaption}
+                  onChangeText={setCurrentCaption}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Category (e.g., 'History', 'Science')"
+                  value={currentCategory}
+                  onChangeText={setCurrentCategory}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Expected Answer (for admin review)"
+                  value={expectedAnswer}
+                  onChangeText={setExpectedAnswer}
+                />
+                <View style={styles.buttonSpacing}>
+                  <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
+                    <Text style={styles.buttonText}>Add Question</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                placeholder="Paste multiple questions here (one per line)"
-                value={bulkQuestionText}
-                onChangeText={setBulkQuestionText}
-                multiline
-                numberOfLines={4}
-              />
-              <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleParseAndAddQuestions}>
-                  <Text style={styles.buttonText}>Parse and Add Questions</Text>
-                </TouchableOpacity>
+              {/* Bulk Question Parser Section */}
+              <View style={styles.questionSectionContainer}>
+                <Text style={styles.gameKeyText}>Bulk Add Questions</Text>
+                <TextInput
+                  style={[styles.input, styles.multilineInput]}
+                  placeholder="Paste multiple questions here (one per line)"
+                  value={bulkQuestionText}
+                  onChangeText={setBulkQuestionText}
+                  multiline
+                  numberOfLines={4}
+                />
+                <View style={styles.buttonSpacing}>
+                  <TouchableOpacity style={styles.button} onPress={handleParseAndAddQuestions}>
+                    <Text style={styles.buttonText}>Parse and Add Questions</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {questions.length > 0 && (
@@ -1436,6 +1445,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#14538e', // Blue border
+  },
+  questionSectionContainer: {
+    borderWidth: 1,
+    borderColor: '#555',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    width: '90%',
+    alignItems: 'center',
   },
   congratulationsText: {
     fontSize: 48,
