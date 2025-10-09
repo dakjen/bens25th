@@ -249,20 +249,18 @@ export default function App() {
 
   const handleAddQuestion = () => {
     console.log('handleAddQuestion called');
-    console.log('currentQuestionText:', currentQuestionText, 'currentImageUrl:', currentImageUrl, 'currentCaption:', currentCaption, 'currentCategory:', currentCategory, 'expectedAnswer:', expectedAnswer);
+    console.log('currentQuestionText:', currentQuestionText, 'currentCategory:', currentCategory, 'expectedAnswer:', expectedAnswer);
 
     if (currentQuestionText) {
       setQuestions(prev => [...prev, {
         questionText: currentQuestionText,
-        imageUrl: currentImageUrl,
-        caption: currentCaption,
+        imageUrl: null, // No image for text question
+        caption: '', // No caption for text question
         category: currentCategory,
         expectedAnswer: expectedAnswer
       }]);
-      console.log('Question added. currentImageUrl was:', currentImageUrl);
+      console.log('Text question added.');
       setCurrentQuestionText('');
-      setCurrentImageUrl(null);
-      setCurrentCaption('');
       setCurrentCategory('');
       setExpectedAnswer('');
     } else {
@@ -271,82 +269,26 @@ export default function App() {
     }
   };
 
-  const handlePlayerImagePick = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const handleAddPhotoQuestion = () => {
+    console.log('handleAddPhotoQuestion called');
+    console.log('currentImageUrl:', currentImageUrl, 'currentCaption:', currentCaption, 'currentCategory:', currentCategory, 'expectedAnswer:', expectedAnswer);
 
-    if (!result.canceled) {
-      setPlayerImageUri(result.assets[0].uri);
-    }
-  };
-
-  const handleSubmitAnswer = () => {
-    console.log('handleSubmitAnswer called');
-    console.log('playerTextAnswer:', playerTextAnswer, 'playerImageUri:', playerImageUri);
-    console.log('socket:', !!socket, 'selectedQuestion:', !!selectedQuestion);
-
-    if (!playerTextAnswer && !playerImageUri) {
-      Alert.alert('Error', 'Please provide either a text answer or upload a photo.');
-      console.log('Error: No text or image provided.');
-      return;
-    }
-
-    if (socket && selectedQuestion) {
-      console.log('Emitting submitAnswer event');
-      socket.emit('submitAnswer', {
-        gameKey,
-        playerName,
-        teamName,
-        questionId: selectedQuestion.id, // Assuming questions have an 'id'
-        questionCategory: selectedQuestion.category, // NEW: Include question category
-        submittedTextAnswer: playerTextAnswer,
-        submittedImageUri: playerImageUri,
-      }, ({ success, message }) => {
-        console.log('submitAnswer callback received. Success:', success, 'Message:', message);
-        if (success) {
-          Alert.alert('Success', 'Answer submitted for review!');
-          setPlayerTextAnswer('');
-          setPlayerImageUri(null);
-          setSelectedQuestion(null); // Go back to clue list
-          // TODO: Update UI to mark question as answered
-        } else {
-          Alert.alert('Error', message || 'Failed to submit answer.');
-        }
-      });
+    if (currentImageUrl) {
+      setQuestions(prev => [...prev, {
+        questionText: '', // No text for photo question
+        imageUrl: currentImageUrl,
+        caption: currentCaption,
+        category: currentCategory,
+        expectedAnswer: expectedAnswer
+      }]);
+      console.log('Photo question added. currentImageUrl was:', currentImageUrl);
+      setCurrentImageUrl(null);
+      setCurrentCaption('');
+      setCurrentCategory('');
+      setExpectedAnswer('');
     } else {
-      console.log('Error: Socket not connected or no question selected.');
-    }
-  };
-
-  const handleReviewAnswer = (answerId, status) => {
-    if (socket) {
-      socket.emit('reviewAnswer', { gameKey, answerId, status }, ({ success, message }) => {
-        if (success) {
-          Alert.alert('Success', `Answer marked as ${status}!`);
-          // The submittedAnswersUpdate listener will refresh the list
-        } else {
-          Alert.alert('Error', message || 'Failed to review answer.');
-        }
-      });
-    }
-  };
-
-  const handleSaveScore = (answerId, score) => {
-    if (socket) {
-      socket.emit('saveScore', { gameKey, answerId, score: parseInt(score) }, ({ success, message }) => {
-        if (success) {
-          Alert.alert('Success', 'Score saved!');
-          setSelectedAnswerForReview(null); // Go back to all answers
-          setCurrentScore(''); // Clear score input
-          // The submittedAnswersUpdate listener will refresh the list
-        } else {
-          Alert.alert('Error', message || 'Failed to save score.');
-        }
-      });
+      Alert.alert('Error', 'Please upload a photo for the photo question.');
+      console.log('Error: No image provided for photo question.');
     }
   };
 
@@ -745,15 +687,37 @@ export default function App() {
               </View>
               <Text style={styles.gameKeyText}>Add Questions</Text>
 
-              {/* Regular/Photo Question Section */}
+              {/* Single Question Section */}
               <View style={styles.questionSectionContainer}>
-                <Text style={styles.gameKeyText}>Single Question</Text>
+                <Text style={styles.gameKeyText}>Add Text Question</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Question Text"
                   value={currentQuestionText}
                   onChangeText={setCurrentQuestionText}
                 />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Category (e.g., 'History', 'Science')"
+                  value={currentCategory}
+                  onChangeText={setCurrentCategory}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Expected Answer (for admin review)"
+                  value={expectedAnswer}
+                  onChangeText={setExpectedAnswer}
+                />
+                <View style={styles.buttonSpacing}>
+                  <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
+                    <Text style={styles.buttonText}>Add Text Question</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Upload Photo with Caption Section */}
+              <View style={styles.questionSectionContainer}>
+                <Text style={styles.gameKeyText}>Add Photo Question</Text>
                 <View style={styles.buttonSpacing}>
                   <TouchableOpacity style={styles.button} onPress={handleImagePick}>
                     <Text style={styles.buttonText}>Upload Photo</Text>
@@ -779,8 +743,8 @@ export default function App() {
                   onChangeText={setExpectedAnswer}
                 />
                 <View style={styles.buttonSpacing}>
-                  <TouchableOpacity style={styles.button} onPress={handleAddQuestion}>
-                    <Text style={styles.buttonText}>Add Question</Text>
+                  <TouchableOpacity style={styles.button} onPress={handleAddPhotoQuestion}>
+                    <Text style={styles.buttonText}>Add Photo Question</Text>
                   </TouchableOpacity>
                 </View>
               </View>
