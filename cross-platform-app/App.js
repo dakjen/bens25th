@@ -272,6 +272,7 @@ export default function App() {
         playerName,
         teamName,
         questionId: selectedQuestion.id, // Assuming questions have an 'id'
+        questionCategory: selectedQuestion.category, // NEW: Include question category
         submittedTextAnswer: playerTextAnswer,
         submittedImageUri: playerImageUri,
       }, ({ success, message }) => {
@@ -973,6 +974,7 @@ export default function App() {
                                 <View key={ansIndex} style={styles.submittedAnswerItem}>
                                   <TouchableOpacity onPress={() => setSelectedAnswerForReview(selectedAnswerForReview === answer ? null : answer)}>
                                     <Text style={styles.clueItemText}>Question: {answer.questionText}</Text>
+                                  {answer.questionCategory && <Text style={styles.clueItemText}>Category: {answer.questionCategory}</Text>}
                                     {answer.submittedTextAnswer && <Text style={styles.clueItemText}>Submitted Text: {answer.submittedTextAnswer}</Text>}
                                     {answer.submittedImageUri && <Image source={{ uri: answer.submittedImageUri }} style={styles.uploadedImage} />}
                                     <Text style={styles.clueItemText}>Expected: {answer.expectedAnswer}</Text>
