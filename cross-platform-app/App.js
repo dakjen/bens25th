@@ -84,7 +84,6 @@ export default function App() {
   const [showRejoinModal, setShowRejoinModal] = useState(false); // NEW
   const [modalGameKey, setModalGameKey] = useState(''); // NEW
   const [modalRejoinCode, setModalRejoinCode] = useState(''); // NEW
-  const [modalTeamName, setModalTeamName] = useState(''); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -532,12 +531,12 @@ export default function App() {
     }
   };
 
-  const handleRejoinGame = (modalGameKey, modalRejoinCode, modalTeamName) => {
+  const handleRejoinGame = (modalGameKey, modalRejoinCode) => {
     console.log('handleRejoinGame called');
-    console.log('gameKey:', modalGameKey, 'rejoinCode:', modalRejoinCode, 'teamName:', modalTeamName);
+    console.log('gameKey:', modalGameKey, 'rejoinCode:', modalRejoinCode);
 
-    if (!modalGameKey || !modalRejoinCode || !modalTeamName) {
-      Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
+    if (!modalGameKey || !modalRejoinCode) {
+      Alert.alert('Error', 'Please fill in all fields (Game Key, Rejoin Code).');
       console.log('Missing fields');
       return;
     }
@@ -546,26 +545,27 @@ export default function App() {
       console.log('Player demo rejoin condition met');
       setGameKey(modalGameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
-      setTeamName(modalTeamName);
+      setTeamName('DemoTeam'); // Set a default team name for demo rejoin
       setCurrentScreen('game');
       setIsAdmin(false);
       setQuestions(DUMMY_PLAYER_QUESTIONS);
       setTeamAnswers({}); // No dummy team answers for player demo
       setPlayerScore(100); // Dummy score
-      Alert.alert('Demo Mode', `Welcome back to player demo, DemoPlayer of Team ${modalTeamName}!`);
+      Alert.alert('Demo Mode', `Welcome back to player demo, DemoPlayer of Team DemoTeam!`);
       setShowRejoinModal(false); // Close modal on successful demo rejoin
       return;
     }
 
     if (socket) {
       console.log('Emitting rejoinGame event');
-      socket.emit('rejoinGame', { gameKey: modalGameKey, rejoinCode: modalRejoinCode, teamName: modalTeamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
+      socket.emit('rejoinGame', { gameKey: modalGameKey, rejoinCode: modalRejoinCode }, ({ success, message, playerName: rejoinedPlayerName, teamName: rejoinedTeamName }) => {
         console.log('rejoinGame callback received. Success:', success, 'Message:', message);
         if (success) {
           setPlayerName(rejoinedPlayerName || 'Player'); // Set player name if rejoined
+          setTeamName(rejoinedTeamName || 'Team'); // Set team name if rejoined
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${modalTeamName}!`);
+          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${rejoinedTeamName || 'Team'}!`);
           setShowRejoinModal(false); // Close modal on successful rejoin
         } else {
           Alert.alert('Error', message || 'Failed to rejoin game');
@@ -597,12 +597,6 @@ export default function App() {
                 onChangeText={setModalGameKey}
                 autoCapitalize="characters"
                 maxLength={6}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Team Name"
-                value={modalTeamName}
-                onChangeText={setModalTeamName}
               />
               <TextInput
                 style={styles.input}
