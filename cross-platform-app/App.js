@@ -81,6 +81,10 @@ export default function App() {
   const [teamAnswers, setTeamAnswers] = useState({}); // NEW
   const [showAdminLogin, setShowAdminLogin] = useState(false); // NEW
   const [adminPassword, setAdminPassword] = useState(''); // NEW
+  const [showRejoinModal, setShowRejoinModal] = useState(false); // NEW
+  const [modalGameKey, setModalGameKey] = useState(''); // NEW
+  const [modalRejoinCode, setModalRejoinCode] = useState(''); // NEW
+  const [modalTeamName, setModalTeamName] = useState(''); // NEW
 
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL);
@@ -528,39 +532,41 @@ export default function App() {
     }
   };
 
-  const handleRejoinGame = () => {
+  const handleRejoinGame = (modalGameKey, modalRejoinCode, modalTeamName) => {
     console.log('handleRejoinGame called');
-    console.log('gameKey:', gameKey, 'rejoinCode:', rejoinCode, 'teamName:', teamName);
+    console.log('gameKey:', modalGameKey, 'rejoinCode:', modalRejoinCode, 'teamName:', modalTeamName);
 
-    if (!gameKey || !rejoinCode || !teamName) {
+    if (!modalGameKey || !modalRejoinCode || !modalTeamName) {
       Alert.alert('Error', 'Please fill in all fields (Game Key, Team Name, Rejoin Code).');
       console.log('Missing fields');
       return;
     }
 
-    if (gameKey === 'PLAYDM') { // Player demo condition
+    if (modalGameKey === 'PLAYDM') { // Player demo condition
       console.log('Player demo rejoin condition met');
-      setGameKey(gameKey);
+      setGameKey(modalGameKey);
       setPlayerName('DemoPlayer'); // A generic name for demo rejoin
-      setTeamName(teamName);
+      setTeamName(modalTeamName);
       setCurrentScreen('game');
       setIsAdmin(false);
       setQuestions(DUMMY_PLAYER_QUESTIONS);
       setTeamAnswers({}); // No dummy team answers for player demo
       setPlayerScore(100); // Dummy score
-      Alert.alert('Demo Mode', `Welcome back to player demo, DemoPlayer of Team ${teamName}!`);
+      Alert.alert('Demo Mode', `Welcome back to player demo, DemoPlayer of Team ${modalTeamName}!`);
+      setShowRejoinModal(false); // Close modal on successful demo rejoin
       return;
     }
 
     if (socket) {
       console.log('Emitting rejoinGame event');
-      socket.emit('rejoinGame', { gameKey, rejoinCode, teamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
+      socket.emit('rejoinGame', { gameKey: modalGameKey, rejoinCode: modalRejoinCode, teamName: modalTeamName }, ({ success, message, playerName: rejoinedPlayerName }) => {
         console.log('rejoinGame callback received. Success:', success, 'Message:', message);
         if (success) {
           setPlayerName(rejoinedPlayerName || 'Player'); // Set player name if rejoined
           setCurrentScreen('game');
           setIsAdmin(false);
-          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${teamName}!`);
+          Alert.alert('Rejoined Game', `Welcome back, ${rejoinedPlayerName || 'Player'} of Team ${modalTeamName}!`);
+          setShowRejoinModal(false); // Close modal on successful rejoin
         } else {
           Alert.alert('Error', message || 'Failed to rejoin game');
         }
@@ -581,6 +587,44 @@ export default function App() {
 
       {!showCongratulationsPage && (
         <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
+          {showRejoinModal && (
+            <View style={styles.rejoinModalContainer}>
+              <Text style={styles.gameKeyText}>Rejoin Game</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Game Key"
+                value={modalGameKey}
+                onChangeText={setModalGameKey}
+                autoCapitalize="characters"
+                maxLength={6}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Team Name"
+                value={modalTeamName}
+                onChangeText={setModalTeamName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="4-digit Rejoin Code (e.g., 1234)"
+                value={modalRejoinCode}
+                onChangeText={(text) => setModalRejoinCode(text.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
+                maxLength={4}
+              />
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => handleRejoinGame(modalGameKey, modalRejoinCode, modalTeamName)}>
+                  <Text style={styles.buttonText}>Rejoin</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonSpacing}>
+                <TouchableOpacity style={styles.button} onPress={() => setShowRejoinModal(false)}>
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           <Text style={styles.title}>Benjamin's 25th Birthday</Text>
           <View>
             <Text style={styles.subtitle}>the frontal lobe develops.</Text>
@@ -880,7 +924,7 @@ export default function App() {
                 </TouchableOpacity>
               </View>
               <View style={styles.buttonSpacing}>
-                <TouchableOpacity style={styles.button} onPress={handleRejoinGame}>
+                <TouchableOpacity style={styles.button} onPress={() => setShowRejoinModal(true)}>
                   <Text style={styles.buttonText}>Rejoin Game</Text>
                 </TouchableOpacity>
               </View>
@@ -1353,6 +1397,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  rejoinModalContainer: {
+    position: 'absolute',
+    top: '20%',
+    left: '10%',
+    right: '10%',
+    backgroundColor: '#303030', // Dark grey background
+    padding: 20,
+    borderRadius: 10,
+    zIndex: 100,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#14538e', // Blue border
   },
   congratulationsText: {
     fontSize: 48,
