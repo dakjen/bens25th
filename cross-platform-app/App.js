@@ -233,7 +233,7 @@ export default function App() {
   const handleImagePick = async () => {
     console.log('handleImagePick called');
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images, // Changed from MediaTypeOptions.Images
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -269,23 +269,30 @@ export default function App() {
     }
   };
 
-  const handleAddPhotoQuestion = () => {
+  const handleAddPhotoQuestion = async () => { // Make it async
     console.log('handleAddPhotoQuestion called');
     console.log('currentImageUrl:', currentImageUrl, 'currentCaption:', currentCaption, 'currentCategory:', currentCategory, 'expectedAnswer:', expectedAnswer);
 
     if (currentImageUrl) {
-      setQuestions(prev => [...prev, {
-        questionText: '', // No text for photo question
-        imageUrl: currentImageUrl,
-        caption: currentCaption,
-        category: currentCategory,
-        expectedAnswer: expectedAnswer
-      }]);
-      console.log('Photo question added. currentImageUrl was:', currentImageUrl);
-      setCurrentImageUrl(null);
-      setCurrentCaption('');
-      setCurrentCategory('');
-      setExpectedAnswer('');
+      // Upload image to server
+      const permanentImageUrl = await uploadImageToServer(currentImageUrl);
+
+      if (permanentImageUrl) {
+        setQuestions(prev => [...prev, {
+          questionText: '', // No text for photo question
+          imageUrl: permanentImageUrl, // Store permanent URL
+          caption: currentCaption,
+          category: currentCategory,
+          expectedAnswer: expectedAnswer
+        }]);
+        console.log('Photo question added. Permanent imageUrl was:', permanentImageUrl);
+        setCurrentImageUrl(null);
+        setCurrentCaption('');
+        setCurrentCategory('');
+        setExpectedAnswer('');
+      } else {
+        // Error already alerted by uploadImageToServer
+      }
     } else {
       Alert.alert('Error', 'Please upload a photo for the photo question.');
       console.log('Error: No image provided for photo question.');
@@ -365,6 +372,33 @@ export default function App() {
       setAdminPassword('');
     } else {
       Alert.alert('Error', 'Incorrect Admin Password');
+    }
+  };
+
+  const uploadImageToServer = async (imageUri) => {
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      const formData = new FormData();
+      formData.append('image', blob, 'photo.jpg'); // 'photo.jpg' is a placeholder filename
+
+      const uploadResponse = await fetch(SOCKET_SERVER_URL + '/upload-image', {
+        method: 'POST',
+        body: formData,
+        // Headers like 'Content-Type': 'multipart/form-data' are usually set automatically by fetch with FormData
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Image upload failed: ${uploadResponse.statusText}`);
+      }
+
+      const data = await uploadResponse.json();
+      return data.imageUrl; // Assuming backend returns { imageUrl: 'permanent_url' }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+      return null;
     }
   };
 
