@@ -7,7 +7,6 @@ import { Manrope_400Regular, Manrope_500Medium, Manrope_700Bold } from '@expo-go
 import { PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
 import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from 'expo-image-picker'; // Added ImagePicker import
-import { MediaType } from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Keep the splash screen visible while we fetch resources
@@ -234,7 +233,7 @@ export default function App() {
   const handleImagePick = async () => {
     console.log('handleImagePick called');
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: MediaType.Images, // Changed from ImagePicker.MediaType.Images
+      mediaTypes: ImagePicker.MediaType.Images, // Changed from MediaType.Images to ImagePicker.MediaType.Images
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
