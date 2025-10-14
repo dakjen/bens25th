@@ -233,7 +233,7 @@ export default function App() {
   const handleImagePick = async () => {
     console.log('handleImagePick called');
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images, // Changed from MediaType.Images to ImagePicker.MediaType.Images
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Reverted to deprecated usage as a workaround
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
